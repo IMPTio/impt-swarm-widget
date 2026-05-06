@@ -1,6 +1,6 @@
 # Privacy Notice
 
-**Effective:** 2026-05-05  ·  **Version:** 0.1.0  ·  **Controller:** IMPT Systems Limited (Clonmel, Ireland)
+**Effective:** 2026-05-05  ·  **Version:** 0.1.0  ·  **Controller:** IMPT Systems Limited (Ireland)
 
 This notice covers data collected by the **IMPT Swarm Widget** (the JavaScript widget, the hosted endpoints under `swarm.impt.io/api/widget/*`, and the partner programme).
 
@@ -68,7 +68,7 @@ The widget does not set any other cookies.
 
 - swarm-widget@impt.io (programme questions)
 - privacy@impt.io (data-rights requests)
-- IMPT Systems Limited, Clonmel, Co. Tipperary, Ireland
+- IMPT Systems Limited, Ireland
 - DPO: Mike English, mike@impt.io
 
 ## Changes

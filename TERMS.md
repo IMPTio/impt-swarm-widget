@@ -66,4 +66,4 @@ These terms are governed by the laws of Ireland. Disputes are subject to the exc
 
 ## Contact
 
-swarm-widget@impt.io  ·  IMPT Systems Limited, Clonmel, Co. Tipperary, Ireland
+swarm-widget@impt.io  ·  IMPT Systems Limited, Ireland

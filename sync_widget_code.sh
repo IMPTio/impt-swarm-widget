@@ -14,7 +14,7 @@ cd "$REPO"
 
 # What never enters git (secrets / data / build / clutter)
 EXCLUDES=(--exclude='.venv' --exclude='__pycache__' --exclude='*.pyc'
-          --exclude='.env' --exclude='.env.*' --exclude='*.db' --exclude='*.db.*'
+          --exclude='.env' --exclude='.env.*' --exclude='*.db' --exclude='*.db*'
           --exclude='*.log' --exclude='*.bak' --exclude='*.bak-*' --exclude='*.bak.*')
 
 # 1) backend (the API brain)

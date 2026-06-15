@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Get started — your IMPT partner widget</title>
+<meta name="description" content="Install your IMPT partner widget in 60 seconds. Earn 5% on every hotel booking, paid monthly. Works on any website, or share your link anywhere.">
+<style>
+  :root{--cream:#FAF7F0;--ink:#08423a;--green:#1E8E5A;--soft:#3a6b62;}
+  *{box-sizing:border-box}
+  body{font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,sans-serif;background:var(--cream);color:var(--ink);margin:0;line-height:1.6}
+  .wrap{max-width:680px;margin:0 auto;padding:40px 22px 80px}
+  h1{font-family:Fraunces,Georgia,serif;font-weight:600;font-size:30px;line-height:1.2;margin:0 0 6px}
+  h2{font-family:Fraunces,Georgia,serif;font-weight:600;font-size:20px;margin:34px 0 10px}
+  .lead{color:var(--soft);font-size:17px;margin:0 0 8px}
+  .step{background:#fff;border:1px solid #e7e1d4;border-radius:14px;padding:20px 22px;margin:16px 0}
+  .num{display:inline-flex;align-items:center;justify-content:center;width:26px;height:26px;border-radius:50%;background:var(--green);color:#fff;font-weight:700;font-size:14px;margin-right:8px}
+  pre{background:var(--ink);color:var(--cream);padding:16px;border-radius:10px;overflow-x:auto;font-size:13px;white-space:pre-wrap;word-break:break-all}
+  code{font-family:ui-monospace,SFMono-Regular,Menlo,monospace}
+  .pill{display:inline-block;background:#e9f3ed;color:var(--green);font-weight:700;font-size:12px;padding:3px 10px;border-radius:999px;margin-bottom:8px}
+  a{color:var(--green);font-weight:600}
+  .foot{margin-top:46px;color:var(--soft);font-size:13px;border-top:1px solid #e7e1d4;padding-top:18px}
+  ul{padding-left:20px}
+  .big{font-size:18px}
+</style>
+<!-- IMPT-OG -->
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="IMPT Swarm">
+<meta property="og:title" content="Get started — your IMPT partner widget">
+<meta property="og:description" content="Install your IMPT partner widget in 60 seconds. Earn 5% on every hotel booking, paid monthly. Works on any website, or share your link anywhere.">
+<meta property="og:image" content="https://swarm.impt.io/assets/og.jpg">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Get started — your IMPT partner widget">
+<meta name="twitter:description" content="Install your IMPT partner widget in 60 seconds. Earn 5% on every hotel booking, paid monthly. Works on any website, or share your link anywhere.">
+<meta name="twitter:image" content="https://swarm.impt.io/assets/og.jpg">
+</head>
+<body>
+<div class="wrap">
+  <div class="pill">IMPT PARTNER WIDGET</div>
+  <h1>You're live — here's how to start earning</h1>
+  <p class="lead">Your audience books from <strong>8M+ hotels</strong> at normal prices. You earn <strong>5% on every booking</strong> (90-day cookie, paid monthly), and every stay offsets <strong>1 tonne of CO₂</strong>. No cost, no stock, no risk.</p>
+  <p class="lead big"><strong>Your personal key and link are in your welcome email.</strong> Use whichever option below fits you.</p>
+
+  <h2>Option A — you have a website</h2>
+  <div class="step">
+    <p><span class="num">1</span> Paste this once, anywhere on your site (before <code>&lt;/body&gt;</code>). Swap <code>YOUR_KEY</code> for the key in your email:</p>
+    <pre>&lt;script src="https://swarm.impt.io/widget.js" data-key="YOUR_KEY" async&gt;&lt;/script&gt;
+&lt;div id="impt-swarm"&gt;&lt;/div&gt;</pre>
+    <p><span class="num">2</span> That's it. The widget appears, your audience searches and books, and every booking is tracked to your key automatically.</p>
+  </div>
+
+  <h2>🌊 NEW — add Wavelength, the search-by-signal widget</h2>
+  <div class="step">
+    <p>Wavelength is the second door: for visitors who know the <strong>feeling</strong> but not the city. They tap a sentence ("Ride flow &amp; jumps, with my dog, under €80 — this weekend"), play four dials, and every destination is analysed and re-ranked live. It auto-tunes to your site (bike shop → MTB mode, surf blog → surf mode) and pays you the same 5%.</p>
+    <pre>&lt;script src="https://swarm.impt.io/wavelength.js" data-key="YOUR_KEY" data-tune="auto" async&gt;&lt;/script&gt;
+&lt;div id="impt-wavelength"&gt;&lt;/div&gt;</pre>
+    <p>Run it <em>alongside</em> the classic widget — classic for visitors who know their destination, Wavelength for everyone upstream of one. <a href="https://swarm.impt.io/wl?k=DEMO&amp;tune=mtb" target="_blank" rel="noopener">See it live →</a></p>
+  </div>
+
+  <h2>Option B — no website? You've got a full kit</h2>
+  <div class="step">
+    <p><strong>1. Your own hotel page.</strong> Your welcome email has a personal page link — your branded booking page. Share it anywhere (bio, WhatsApp, Telegram, X, Facebook, a group):</p>
+    <pre>https://swarm.impt.io/go?k=YOUR_KEY</pre>
+    <p>Every booking made on it is tracked to you for 90 days.</p>
+    <p><strong>2. Your QR code.</strong> For stories, posters, flyers or in person — people scan and book:</p>
+    <pre>https://swarm.impt.io/api/widget/qr/YOUR_KEY.png</pre>
+    <p><strong>3. Ready-to-post caption.</strong> Copy/paste:</p>
+    <pre>Planning a trip? Book hotels through my link — same prices, every stay offsets 1 tonne of CO₂ 🌍  https://swarm.impt.io/go?k=YOUR_KEY</pre>
+    <p style="color:var(--soft);font-size:14px">Advanced: a raw tracked link <code>https://swarm.impt.io/api/widget/r?key=YOUR_KEY&amp;dest=Madrid</code> to aim at a specific city.</p>
+  </div>
+
+  <h2>How you get paid</h2>
+  <div class="step">
+    <ul>
+      <li><strong>5% of every booking</strong> made through your key or link.</li>
+      <li><strong>90-day cookie</strong> — if someone clicks today and books within 90 days, it still counts.</li>
+      <li>Paid <strong>monthly</strong>. Every stay also offsets 1 tonne of CO₂.</li>
+    </ul>
+  </div>
+
+  <h2>See your clicks &amp; earnings</h2>
+  <div class="step">
+    <p>Track your clicks, bookings and balance on your dashboard:</p>
+    <p class="big"><a href="https://partners.impt.io/widget">partners.impt.io/widget</a></p>
+    <p>Log in with the <strong>API token</strong> in your welcome email.</p>
+  </div>
+
+  <div class="foot">
+    Stuck? Just reply to your welcome email — a real person reads it. <br>
+    IMPT — hotels that pay your cause back &amp; offset carbon.
+  </div>
+</div>
+<script>
+// Vertical personalisation (2026-06-12): ?v=mtb|surf|lgbtq|walks|scuba themes this guide
+// to the widget they downloaded. ?k=p_xxx personalises the snippets with their real key.
+(function(){
+  var VERTS={
+    mtb:{e:'🚵',pill:'IMPT MTB WIDGET',h:"Your MTB Widget is live — here's how to start earning",
+         lead:'Your riders book hotels by the trails — <strong>117 bike-resort guides</strong> built in. You earn <strong>5% on every booking</strong> (90-day cookie, paid monthly), and every stay offsets <strong>1 tonne of CO₂</strong>.',
+         see:'https://impt.io/mountain-bike-trails/',seeLabel:'See it live on IMPT Mountain Bike Trails →',js:'mtb-widget.js'},
+    surf:{e:'🏄',pill:'IMPT SURF WIDGET',h:"Your Surf Widget is live — here's how to start earning",
+         lead:'Your surfers book stays right by the breaks. You earn <strong>5% on every booking</strong> (90-day cookie, paid monthly), and every stay offsets <strong>1 tonne of CO₂</strong>.',
+         see:'https://impt.io/surf-hotels/',seeLabel:'See it live on IMPT Surf Hotels →'},
+    lgbtq:{e:'🏳️‍🌈',pill:'IMPT PRIDE WIDGET',h:"Your Pride Widget is live — here's how to start earning",
+         lead:'Your community books welcoming stays in <strong>195 countries</strong>. You earn <strong>5% on every booking</strong> (90-day cookie, paid monthly), and every stay offsets <strong>1 tonne of CO₂</strong>.',
+         see:'https://impt.io/worlds',seeLabel:'See the worlds it powers →'},
+    walks:{e:'🥾',pill:'IMPT WALKS WIDGET',h:"Your Walks Widget is live — here's how to start earning",
+         lead:'Your walkers book hotels along the world&rsquo;s great trails. You earn <strong>5% on every booking</strong> (90-day cookie, paid monthly), and every stay offsets <strong>1 tonne of CO₂</strong>.',
+         see:'https://impt.io/walks',seeLabel:'See it live on IMPT Walks →'},
+    scuba:{e:'🤿',pill:'IMPT SCUBA WIDGET',h:"Your Scuba Widget is live — here's how to start earning",
+         lead:'Your divers book stays by the world&rsquo;s best dive sites. You earn <strong>5% on every booking</strong> (90-day cookie, paid monthly), and every stay offsets <strong>1 tonne of CO₂</strong>.',
+         see:'https://impt.io/worlds',seeLabel:'See the worlds it powers →'}};
+  var q=new URLSearchParams(location.search);
+  var v=(q.get('v')||'').toLowerCase(), k=(q.get('k')||'').trim();
+  if(VERTS[v]){
+    var c=VERTS[v];
+    document.querySelector('.pill').textContent=c.pill;
+    document.querySelector('h1').textContent=c.e+' '+c.h;
+    document.querySelector('.lead').innerHTML=c.lead+' <a href="'+c.see+'">'+c.seeLabel+'</a>';
+    if(c.js){document.querySelectorAll('pre').forEach(function(p){p.innerHTML=p.innerHTML.replace(/widget\.js/g,c.js);});}
+    document.title=c.pill.replace('IMPT ','Your IMPT ')+' — get started';
+  }
+  if(/^p_[a-z0-9]{4,30}$/.test(k)){
+    document.querySelectorAll('pre').forEach(function(p){p.innerHTML=p.innerHTML.replace(/YOUR_KEY/g,k);});
+    var b=document.querySelector('.lead.big'); if(b){b.innerHTML='<strong>Your partner key is <code>'+k+'</code> — it&rsquo;s already in the snippets below.</strong>';}
+  }
+})();
+</script>
+</body>
+</html>

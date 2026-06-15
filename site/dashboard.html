@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Your IMPT Partner Dashboard</title>
+<meta name="description" content="Your IMPT partner widget — live earnings, climate impact and share tools.">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="IMPT">
+<meta property="og:title" content="Your IMPT Partner Dashboard">
+<meta property="og:description" content="8M+ hotels worldwide. Every stay offsets 1 tonne of CO₂. Hotels that pay you back.">
+<meta property="og:image" content="https://swarm.impt.io/assets/og.jpg">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="/assets/impt-widget-ds.css?v=20260614d">
+</head>
+<body data-v="widget">
+<div class="wrap">
+
+  <!-- header -->
+  <header class="top fade">
+    <div class="brandrow">
+      <span class="brand">impt</span>
+      <span class="pill"><span class="dot"><i class="ping"></i><i></i></span><span id="pillLabel">Your widget · Live</span></span>
+    </div>
+    <h1 class="hi" id="hi">Your Partner Dashboard</h1>
+  </header>
+
+  <div id="banner"></div>
+
+  <!-- hero earnings -->
+  <section class="hero fade d1">
+    <div class="img"></div><div class="shade"></div>
+    <div class="in">
+      <div class="cap">Earnings this month</div>
+      <div class="big" id="month">€0.00</div>
+      <div class="sub">5% on every booking, paid in full.</div>
+      <div class="mini">
+        <div class="m"><div class="mk">Pending</div><div class="mv" id="pending">€0.00</div></div>
+        <div class="m"><div class="mk">Paid out</div><div class="mv" id="paid">€0.00</div></div>
+        <div class="m"><div class="mk">Lifetime</div><div class="mv" id="life">€0.00</div></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- climate -->
+  <section class="climate fade d2">
+    <div class="big"><span id="co2">0</span> <span id="co2unit">tonnes</span> of CO₂ offset 🌍</div>
+    <div class="sub" id="climateline">Every stay booked through you offsets 1 tonne of carbon — real impact, on the house.</div>
+  </section>
+
+  <!-- stat row -->
+  <section class="stats fade d2">
+    <div class="card pad"><div class="lbl">Clicks (30d)</div><div class="n" id="clicks">0</div></div>
+    <div class="card pad"><div class="lbl">Bookings</div><div class="n" id="bookings">0</div></div>
+    <div class="card pad"><div class="lbl">Conversion</div><div class="n" id="conv">0%</div></div>
+  </section>
+
+  <!-- payout -->
+  <section class="card pad mt fade d3">
+    <div class="payhead">
+      <div><div class="lbl">Next payout</div><div class="v" id="payv">€0.00 of ~$50</div></div>
+      <div class="pct" id="paypct">0%</div>
+    </div>
+    <div class="bar"><i id="prog" style="width:0%"></i></div>
+    <div class="note" id="payline">Payouts go monthly once you pass $50.</div>
+  </section>
+
+  <!-- bookings -->
+  <section class="card mt fade d3" style="overflow:hidden">
+    <div class="thead"><h2 class="disp" style="font-size:19px;font-weight:600">Recent bookings</h2><span class="muted" style="font-size:12px" id="bkcount">0 total</span></div>
+    <div id="bktable">
+      <div class="empty"><div class="e1">No bookings yet — your first one's coming 🌱</div><div class="note" style="margin-top:6px">Share your link below to start earning 5% on every stay.</div></div>
+    </div>
+  </section>
+
+  <!-- make it yours -->
+  <section class="card pad mt fade d4">
+    <h2 class="disp" style="font-size:19px;font-weight:600">Make it yours 🎨</h2>
+    <p class="muted" style="font-size:14px;margin:6px 0 0">Your brand or name shows up on your widget and emails — your audience trusts it more and books more.</p>
+    <div class="row" style="margin-top:16px">
+      <input class="field" id="bname" placeholder="e.g. Acme Travel Co.">
+      <button class="btn" id="bsave" onclick="saveBrand()">Save</button>
+    </div>
+    <div class="ok" id="bok"></div><div class="err" id="berr"></div>
+    <div class="note" id="bnote" style="display:none">Open your dashboard link from your welcome email to enable editing.</div>
+  </section>
+
+  <!-- share -->
+  <section class="card pad mt fade d5">
+    <h2 class="disp" style="font-size:19px;font-weight:600">Share your link <span id="shareEmoji">🌍</span></h2>
+    <p class="muted" style="font-size:14px;margin:6px 0 0">One link. 8M+ hotels worldwide. Every stay offsets 1 tonne of CO₂.</p>
+    <div class="share-grid">
+      <div>
+        <div class="row">
+          <input class="field" id="url" readonly value="Your link appears once your dashboard loads">
+          <button class="btn" id="copyb" onclick="copyLink()">Copy</button>
+        </div>
+        <div class="chips" id="chips"></div>
+        <a class="siglink" id="sig" target="_blank" rel="noreferrer">Grab your email signature →</a>
+      </div>
+      <div class="qrbox">
+        <div class="b"><img id="qr" alt="Your referral QR code"></div>
+        <div class="c">Scan to share</div>
+      </div>
+    </div>
+  </section>
+
+  <div class="foot">IMPT — hotels that pay you back &amp; offset carbon. <span style="opacity:.75">8M+ hotels worldwide · every stay offsets 1 tonne of CO₂.</span></div>
+</div>
+
+<script>
+(function(){
+  var BASE="https://swarm.impt.io", THRESH=4600;
+  var TH={
+    widget:{label:"Global",emoji:"🌍",hi:function(n){return "Welcome back, "+n+" 👋";},share:"Book hotels that pay you back & offset 1 tonne of CO₂ per stay →"},
+    mtb:{label:"Mountain Biking",emoji:"🚵",hi:function(n){return "Trails calling, "+n+"? 🚵";},share:"Riders — book any hotel through me, get cashback & offset your stay 🚵"},
+    surf:{label:"Surf",emoji:"🏄",hi:function(n){return "Swell's up, "+n+" 🏄";},share:"Surfers — book your next trip through me, get paid & offset every stay 🌊"},
+    golf:{label:"Golf",emoji:"⛳",hi:function(n){return "Tee time, "+n+" ⛳";},share:"Golfers — book hotels through me, earn cashback & offset your travel ⛳"},
+    lgbtq:{label:"Pride",emoji:"🏳️‍🌈",hi:function(n){return "Hey "+n+" 🏳️‍🌈";},share:"Travel proud — book through me for cashback & a carbon-offset stay 🏳️‍🌈"},
+    walks:{label:"Walks & Hiking",emoji:"🥾",hi:function(n){return "Boots ready, "+n+" 🥾";},share:"Hikers — book your stays through me, earn cashback & offset your trip 🌲"},
+    scuba:{label:"Scuba",emoji:"🤿",hi:function(n){return "Dive in, "+n+" 🤿";},share:"Divers — book hotels through me, earn cashback & offset every stay 🐠"},
+    clubs:{label:"Clubs",emoji:"🎟️",hi:function(n){return "Welcome back, "+n+" 🎟️";},share:"Members — book any hotel through me, earn cashback & offset every trip ✨"},
+    brands:{label:"Brands",emoji:"✨",hi:function(n){return "Welcome back, "+n+" ✨";},share:"Book through us — earn cashback & offset 1 tonne of CO₂ per stay."}
+  };
+  var qs=new URLSearchParams(location.search);
+  var key=qs.get("k")||qs.get("key")||"", token=qs.get("t")||"", vq=(qs.get("v")||"").toLowerCase(), demo=qs.get("demo")==="1";
+  var $=function(id){return document.getElementById(id);};
+  function eur(c){return new Intl.NumberFormat("en-IE",{style:"currency",currency:"EUR"}).format((c||0)/100);}
+  function num(n){return new Intl.NumberFormat("en-IE").format(n||0);}
+  function fdate(s){return s?new Date(s*1000).toLocaleDateString("en-IE",{day:"2-digit",month:"short",year:"numeric"}):"—";}
+  function esc(s){return String(s==null?"":s).replace(/[&<>"]/g,function(c){return{"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c];});}
+  function first(name,email){var s=(name||email||"Partner").trim();if(name)return name.split(/\s+/)[0];return (s.split("@")[0].replace(/[._-]+/g," ").split(" ")[0])||"Partner";}
+
+  var theme="widget", t=TH.widget;
+  function applyTheme(v){ if(TH[v]){theme=v;} t=TH[theme]; document.body.setAttribute("data-v",theme);
+    $("pillLabel").textContent="Your "+t.label+" widget · Live"; $("shareEmoji").textContent=t.emoji; }
+
+  function buildShareLinks(){
+    var page = key ? (BASE+"/api/widget/r?key="+encodeURIComponent(key)) : "";
+    $("url").value = page || "Your link appears once your dashboard loads";
+    $("qr").src = BASE+"/api/widget/qr/"+encodeURIComponent(key||"demo")+".png";
+    $("sig").href = BASE+"/api/email/sig/"+encodeURIComponent(key||"demo");
+    var msg=t.share+(page?(" "+page):""), enc=encodeURIComponent(msg), encU=encodeURIComponent(page), encL=encodeURIComponent(t.share);
+    var ch=[["WhatsApp","https://wa.me/?text="+enc],["Telegram","https://t.me/share/url?url="+encU+"&text="+encL],
+      ["X","https://twitter.com/intent/tweet?text="+enc],["Facebook","https://www.facebook.com/sharer/sharer.php?u="+encU],
+      ["LinkedIn","https://www.linkedin.com/sharing/share-offsite/?url="+encU],
+      ["Email","mailto:?subject="+encodeURIComponent("Book hotels that pay you back")+"&body="+enc],["SMS","sms:?&body="+enc]];
+    $("chips").innerHTML=ch.map(function(c){var on=!!page;
+      return '<a class="chip" '+(on?'href="'+c[1]+'" target="_blank" rel="noreferrer"':'aria-disabled="true" style="opacity:.5;pointer-events:none"')+'>'+c[0]+'</a>';}).join("");
+  }
+
+  window.copyLink=function(){var i=$("url");i.select();try{navigator.clipboard.writeText(i.value);}catch(e){}
+    var b=$("copyb");b.textContent="Copied ✓";setTimeout(function(){b.textContent="Copy";},1600);};
+
+  window.saveBrand=function(){
+    var nm=($("bname").value||"").trim(); $("bok").style.display="none"; $("berr").style.display="none";
+    if(!token){$("berr").textContent="Open your dashboard link from your welcome email to save.";$("berr").style.display="block";return;}
+    if(!nm){return;}
+    var b=$("bsave");b.disabled=true;b.textContent="Saving…";
+    fetch(BASE+"/api/widget/setname",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({key:key,token:token,name:nm})})
+      .then(function(r){return r.json();}).then(function(d){ b.disabled=false;b.textContent="Save";
+        if(d&&d.ok){$("bok").textContent="✓ Saved — that's how guests will see you.";$("bok").style.display="block";}
+        else{$("berr").textContent="Couldn't save — check you opened this from your welcome-email link.";$("berr").style.display="block";}})
+      .catch(function(){b.disabled=false;b.textContent="Save";$("berr").textContent="Couldn't save — try again.";$("berr").style.display="block";});
+  };
+
+  function paint(d){
+    var b=d.bookings||[], now=Date.now()/1000;
+    function sum(f){return b.filter(f).reduce(function(a,x){return a+(x.accrual_eur_cents||0);},0);}
+    var month=sum(function(x){return now-x.booked_at<=30*86400;});
+    var pend=sum(function(x){return x.status==="pending";});
+    var paid=sum(function(x){return x.status==="paid";});
+    var life=sum(function(){return true;});
+    var clicks=d.clicks_30d||0;
+    var conv=clicks?Math.round(1000*b.length/clicks)/10:0;
+    var bal=(d.balance_eur_cents!=null)?d.balance_eur_cents:sum(function(x){return x.status==="pending"||x.status==="payable"||x.status==="checked_in";});
+    $("month").textContent=eur(month); $("pending").textContent=eur(pend); $("paid").textContent=eur(paid); $("life").textContent=eur(life);
+    $("clicks").textContent=num(clicks); $("bookings").textContent=num(b.length); $("conv").textContent=conv+"%";
+    $("co2").textContent=num(b.length); $("co2unit").textContent=(b.length===1?"tonne":"tonnes");
+    var ready=bal>=THRESH, pct=Math.min(100,Math.round(100*bal/THRESH));
+    $("prog").style.width=pct+"%"; $("paypct").textContent=pct+"%";
+    $("payv").textContent=ready?"🎉 You're ready for payout!":(eur(bal)+" of ~$50");
+    $("payline").textContent=ready?"We'll send your payout in the next monthly run.":"Payouts go monthly once you pass $50.";
+    $("bkcount").textContent=b.length+" total";
+    if(b.length){
+      var rows=b.slice(0,12).map(function(x){
+        var st=(x.status==="paid")?'<span class="spill paid">Paid</span>':
+               (x.status==="payable"||x.status==="checked_in")?'<span class="spill conf">Confirmed</span>':'<span class="spill pend">Pending stay</span>';
+        return '<tr><td><div class="hname">Booking '+esc(x.booking_id)+'</div><div class="hsub">Booked '+fdate(x.booked_at)+' · check-in '+fdate(x.check_in_at)+'</div></td>'+
+               '<td class="r tabnum">'+eur(x.base_value_cents)+'</td><td class="r tabnum acc">'+eur(x.accrual_eur_cents)+'</td><td class="r">'+st+'</td></tr>';
+      }).join("");
+      $("bktable").innerHTML='<table><thead><tr><th>Hotel</th><th class="r">Value</th><th class="r">Your 5%</th><th class="r">Status</th></tr></thead><tbody>'+rows+'</tbody></table>';
+    }
+  }
+
+  // initial theme from ?v= (data refines it once loaded)
+  applyTheme(vq||"widget");
+  buildShareLinks();
+  if(!token) $("bnote").style.display="block";
+
+  if(demo){
+    $("hi").textContent=t.hi("Alex");
+    paint({clicks_30d:412,balance_eur_cents:3820,bookings:[
+      {booking_id:"BK-90211",base_value_cents:42000,accrual_eur_cents:2100,status:"payable",booked_at:Date.now()/1000-3*86400,check_in_at:Date.now()/1000+10*86400},
+      {booking_id:"BK-90187",base_value_cents:28900,accrual_eur_cents:1445,status:"paid",booked_at:Date.now()/1000-14*86400,check_in_at:Date.now()/1000-2*86400},
+      {booking_id:"BK-90155",base_value_cents:61200,accrual_eur_cents:3060,status:"pending",booked_at:Date.now()/1000-1*86400,check_in_at:Date.now()/1000+22*86400},
+      {booking_id:"BK-90121",base_value_cents:18700,accrual_eur_cents:935,status:"checked_in",booked_at:Date.now()/1000-20*86400,check_in_at:Date.now()/1000-1*86400},
+      {booking_id:"BK-90099",base_value_cents:33400,accrual_eur_cents:1670,status:"paid",booked_at:Date.now()/1000-26*86400,check_in_at:Date.now()/1000-12*86400}
+    ]});
+    return;
+  }
+
+  if(!token){ $("banner").innerHTML='<div class="card pad banner"><strong class="disp" style="font-size:16px">Open the dashboard link from your welcome email</strong> to see your live numbers. You can still grab your share tools below.</div>'; $("hi").textContent="Your Partner Dashboard"; return; }
+
+  fetch(BASE+"/api/widget/partners/me",{headers:{Authorization:"Bearer "+token}})
+    .then(function(r){if(!r.ok)throw new Error("HTTP "+r.status);return r.json();})
+    .then(function(d){
+      var p=d.partner||{};
+      if(!vq && p.vertical && TH[p.vertical.toLowerCase()]) applyTheme(p.vertical.toLowerCase());
+      var nm=first(p.name,p.email); $("hi").textContent=t.hi(nm);
+      if(p.name && !$("bname").value) $("bname").value=p.name;
+      if(p.key){ key=p.key; }
+      buildShareLinks();
+      paint(d);
+    })
+    .catch(function(e){ $("banner").innerHTML='<div class="alert">Couldn\'t load your live numbers ('+esc(e.message)+'). Try refreshing your dashboard link.</div>'; });
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,286 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Book hotels that do good — IMPT</title>
+<meta name="description" content="Book from 8M+ hotels at the prices you'd pay anywhere. Every stay retires verified carbon credits and gives back. Powered by IMPT — hotels & carbon offset.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --cream:#F7F4EC; --panel:#FFFFFF; --ink:#0E2C25; --ink2:#13231B;
+    --green:#1E8E5A; --deep:#0B4A40; --lime:#C8FF7E; --soft:#3a6b62; --mute:#7C887F; --rule:#E7E1D4;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0}
+  body{font-family:Inter,-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;background:var(--cream);color:var(--ink2);line-height:1.55;-webkit-font-smoothing:antialiased}
+  a{color:var(--green);text-decoration:none}
+  .wrap{max-width:820px;margin:0 auto;padding:0 20px}
+  h1,h2,h3{font-family:Fraunces,Georgia,serif;font-weight:600;letter-spacing:-.01em;margin:0}
+  .top{display:flex;align-items:center;gap:9px;padding:20px 0 6px;font-weight:800;font-size:18px;color:var(--ink)}
+  .top .wave{font-size:21px}
+  .top small{font-weight:500;color:var(--mute);font-size:11px;letter-spacing:.14em;text-transform:uppercase;margin-left:4px}
+  /* hero */
+  .hero{padding:18px 0 6px}
+  .by{display:inline-flex;align-items:center;gap:8px;background:#E9F3ED;color:var(--green);font-weight:700;font-size:13px;padding:6px 14px;border-radius:999px;margin-bottom:16px}
+  #plogo{max-height:54px;max-width:190px;margin-bottom:12px;border-radius:8px;display:none}
+  .hero h1{font-size:46px;line-height:1.05}
+  .hero h1 .grad{background:linear-gradient(90deg,var(--green),#3FB97E);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent}
+  .hero .lede{font-size:18px;color:var(--soft);margin:16px 0 4px;max-width:660px}
+  .searchpanel{background:var(--panel);border:1px solid var(--rule);border-radius:20px;box-shadow:0 28px 64px -34px rgba(8,42,58,.34);padding:10px;margin:22px 0 0}
+  #impt-swarm{min-height:120px}
+  .heroband{width:100%;height:340px;object-fit:cover;object-position:center 42%;border-radius:20px;display:block;margin:30px 0 0;border:1px solid var(--rule)}
+  .carbonimg{width:100%;border-radius:16px;display:block}
+  .fallback{display:none;margin:12px 2px 0;font-weight:700}
+  .reassure{display:flex;flex-wrap:wrap;gap:16px;color:var(--soft);font-size:13.5px;font-weight:600;margin:16px 2px 0}
+  .reassure span{display:inline-flex;align-items:center;gap:7px}
+  .stats{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin:30px 0 0}
+  .stat{background:var(--panel);border:1px solid var(--rule);border-radius:14px;padding:15px 10px;text-align:center}
+  .stat b{display:block;font-family:Fraunces,Georgia,serif;font-size:25px;color:var(--green);line-height:1}
+  .stat span{font-size:10.5px;letter-spacing:.08em;text-transform:uppercase;color:var(--mute);margin-top:5px;display:block}
+  /* sections */
+  section{padding:46px 0 0}
+  .center{text-align:center}
+  .eyebrow{display:inline-block;color:var(--green);font-weight:700;font-size:12px;letter-spacing:.14em;text-transform:uppercase;margin-bottom:10px}
+  h2{font-size:30px;line-height:1.12}
+  .sub{color:var(--soft);font-size:16px;margin-top:8px;max-width:560px}
+  .center .sub{margin-left:auto;margin-right:auto}
+  .cards{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-top:24px}
+  .card{background:var(--panel);border:1px solid var(--rule);border-radius:16px;padding:22px}
+  .card .ic{font-size:24px}
+  .card h3{font-size:17px;margin:10px 0 5px}
+  .card p{color:var(--soft);font-size:14px;margin:0}
+  /* carbon section */
+  .carbon{display:grid;grid-template-columns:1.1fr .9fr;gap:26px;align-items:center;background:var(--panel);border:1px solid var(--rule);border-radius:22px;padding:30px;margin-top:26px}
+  .carbon h2{font-size:28px}
+  .carbon ul{list-style:none;padding:0;margin:18px 0 0;display:grid;gap:12px}
+  .carbon li{display:flex;gap:11px;font-size:14.5px;color:var(--soft)}
+  .carbon li b{color:var(--ink2)}
+  .carbon li .tick{color:var(--green);font-weight:800}
+  /* certificate visual */
+  .cert{background:linear-gradient(160deg,#0B4A40,#13302a);border-radius:18px;padding:24px;color:#EAF4EC;position:relative;overflow:hidden}
+  .cert:before{content:"";position:absolute;inset:0;background:radial-gradient(120px 120px at 80% 0,rgba(200,255,126,.18),transparent)}
+  .cert .seal{font-size:30px}
+  .cert .big{font-family:Fraunces,Georgia,serif;font-size:40px;color:var(--lime);line-height:1;margin:10px 0 2px}
+  .cert .lbl{font-size:11px;letter-spacing:.16em;text-transform:uppercase;color:rgba(234,244,236,.6)}
+  .cert .row{display:flex;justify-content:space-between;font-size:12px;color:rgba(234,244,236,.78);margin-top:16px;border-top:1px solid rgba(255,255,255,.12);padding-top:12px}
+  /* goodness band */
+  .band{background:var(--deep);color:#EAF4EC;border-radius:22px;padding:36px 26px;margin:26px 0 0}
+  .band h2{color:#fff}.band .sub{color:rgba(234,244,236,.7)}
+  .split{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-top:24px}
+  .split .item .v{font-family:Fraunces,Georgia,serif;font-size:30px;color:var(--lime);line-height:1}
+  .split .item .k{font-size:12.5px;color:#fff;font-weight:700;margin-top:7px}
+  .split .item .b{font-size:12px;color:rgba(234,244,236,.62);margin-top:3px}
+  /* steps */
+  .steps{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-top:24px;counter-reset:s}
+  .step{background:var(--panel);border:1px solid var(--rule);border-radius:16px;padding:22px}
+  .step .n{display:inline-flex;align-items:center;justify-content:center;width:30px;height:30px;border-radius:50%;background:var(--green);color:#fff;font-weight:700;margin-bottom:10px}
+  .step h3{font-size:16px;margin:0 0 5px}.step p{color:var(--soft);font-size:14px;margin:0}
+  /* ecosystem */
+  .eco{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-top:24px}
+  .eco a{background:var(--panel);border:1px solid var(--rule);border-radius:16px;padding:20px;color:var(--ink2);display:block}
+  .eco a .ic{font-size:22px}.eco a h3{font-size:16px;margin:9px 0 4px}.eco a p{color:var(--soft);font-size:13.5px;margin:0}
+  .eco a .more{color:var(--green);font-weight:700;font-size:13px;margin-top:8px;display:inline-block}
+  /* faq */
+  .faq{margin-top:22px;display:grid;gap:10px}
+  details{background:var(--panel);border:1px solid var(--rule);border-radius:14px;padding:16px 18px}
+  details summary{font-weight:700;cursor:pointer;list-style:none;font-size:15px}
+  details summary::-webkit-details-marker{display:none}
+  details summary:after{content:"+";float:right;color:var(--green);font-weight:800}
+  details[open] summary:after{content:"–"}
+  details p{color:var(--soft);font-size:14px;margin:10px 0 0}
+  /* trust + footer */
+  .trust{display:flex;flex-wrap:wrap;justify-content:center;gap:10px;margin-top:40px}
+  .trust span{background:var(--panel);border:1px solid var(--rule);border-radius:999px;padding:8px 15px;font-size:12.5px;font-weight:600;color:var(--soft)}
+  .endcta{margin-top:38px}
+  .btn{background:var(--green);color:#fff;font-weight:700;padding:14px 26px;border-radius:12px;display:inline-block}
+  footer{border-top:1px solid var(--rule);margin-top:44px;padding:26px 0 60px;color:var(--mute);font-size:12.5px;text-align:center}
+  footer a{color:var(--soft)}
+  @media (max-width:700px){
+    .hero h1{font-size:34px}
+    .stats{grid-template-columns:repeat(2,1fr)}
+    .cards,.steps,.eco{grid-template-columns:1fr}
+    .split{grid-template-columns:repeat(2,1fr)}
+    .carbon{grid-template-columns:1fr;padding:24px}
+  }
+</style>
+<!-- IMPT-OG -->
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="IMPT">
+<meta property="og:title" content="Book hotels that do good 🌍">
+<meta property="og:description" content="8M+ hotels at the prices you'd pay anywhere — every stay retires verified carbon credits and gives back. Powered by IMPT.">
+<meta property="og:image" content="https://swarm.impt.io/assets/og.jpg">
+<meta property="og:image:width" content="1200"><meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Book hotels that do good 🌍">
+<meta name="twitter:description" content="8M+ hotels at the prices you'd pay anywhere — every stay retires verified carbon credits. Powered by IMPT.">
+<meta name="twitter:image" content="https://swarm.impt.io/assets/og.jpg">
+</head>
+<body>
+<div class="wrap">
+
+  <div class="top"><span class="wave">🌊</span> IMPT <small>Hotels &amp; Carbon Offset</small></div>
+
+  <header class="hero">
+    <img id="plogo" alt="">
+    <div id="by" class="by" style="display:none"></div>
+    <h1>Book hotels that <span class="grad">do good</span>.</h1>
+    <p class="lede" id="lede">8M+ hotels worldwide at the prices you'd pay anywhere — and every stay retires <b>verified carbon credits</b> and gives back. One search, somewhere good to land.</p>
+
+    <div class="searchpanel"><div id="impt-swarm"></div></div>
+    <a id="fallback" class="fallback" href="#">Search hotels →</a>
+
+    <div class="reassure">
+      <span>✅ Same prices you'd pay anywhere</span>
+      <span>🌍 1 tonne CO₂ offset per stay</span>
+      <span>💚 Every stay gives back</span>
+    </div>
+
+    <div class="stats">
+      <div class="stat"><b>8M+</b><span>Hotels</span></div>
+      <div class="stat"><b>195</b><span>Countries</span></div>
+      <div class="stat"><b>90d</b><span>Best-price window</span></div>
+      <div class="stat"><b>1 t</b><span>CO₂ offset / stay</span></div>
+    </div>
+    <img class="heroband" src="/assets/hero-travel.jpg" alt="For the ones who came to see the world — not the hotel room" loading="lazy">
+  </header>
+
+  <section id="why">
+    <div class="center">
+      <span class="eyebrow">Why book here</span>
+      <h2>Booking that actually does something.</h2>
+      <p class="sub">Same hotels, same prices — but every stay leaves the planet a little better.</p>
+    </div>
+    <div class="cards">
+      <div class="card"><div class="ic">🏨</div><h3>Everywhere you go</h3><p>8M+ hotels across 195 countries, real-time prices, no markup. Search exactly like you would anywhere else.</p></div>
+      <div class="card"><div class="ic">🌍</div><h3>Carbon-positive</h3><p>One tonne of verified CO₂ offset built into every booking — paid by IMPT, never added to your bill.</p></div>
+      <div class="card"><div class="ic">💚</div><h3>It gives back</h3><p>Every stay sends value back — to a cause, a credit, and the host who shared this page with you.</p></div>
+    </div>
+  </section>
+
+  <section id="carbon">
+    <div class="carbon">
+      <div>
+        <span class="eyebrow">Real climate action</span>
+        <h2>Every stay funds verified carbon credits.</h2>
+        <p class="sub" style="margin-top:10px">Not a vague promise. Each booking retires real, traceable IMPT carbon credits — the same credits powering a marketplace built to fund genuine climate projects.</p>
+        <ul>
+          <li><span class="tick">✓</span><span><b>Verified &amp; traceable.</b> Real projects — reforestation, clean energy, conservation — retired on your behalf.</span></li>
+          <li><span class="tick">✓</span><span><b>One tonne per stay.</b> Built in and paid by IMPT, so it costs you nothing extra.</span></li>
+          <li><span class="tick">✓</span><span><b>Part of something bigger.</b> IMPT is a full carbon-credit marketplace across 195 countries.</span></li>
+        </ul>
+        <p style="margin-top:18px"><a href="https://impt.io" style="font-weight:700">Explore IMPT carbon credits →</a></p>
+      </div>
+      <img class="carbonimg" src="/assets/carbon-forest.jpg" alt="1 tonne of CO₂ offset per booking, paid by IMPT" loading="lazy">
+    </div>
+  </section>
+
+  <section>
+    <div class="band">
+      <div class="center">
+        <h2>The Goodness on every stay</h2>
+        <p class="sub">A fixed cascade triggered by each booking — paid by IMPT, never bolted onto your price.</p>
+      </div>
+      <div class="split">
+        <div class="item"><div class="v">5%</div><div class="k">Goes back</div><div class="b">To your host / cause</div></div>
+        <div class="item"><div class="v">€5</div><div class="k">Welcome credit</div><div class="b">Off your first booking</div></div>
+        <div class="item"><div class="v">1 t</div><div class="k">CO₂ offset</div><div class="b">Verified, every stay</div></div>
+        <div class="item"><div class="v">90d</div><div class="k">Price window</div><div class="b">Book later, still counts</div></div>
+      </div>
+    </div>
+  </section>
+
+  <section id="how">
+    <div class="center">
+      <span class="eyebrow">How it works</span>
+      <h2>Three steps, somewhere good to stay.</h2>
+    </div>
+    <div class="steps">
+      <div class="step"><div class="n">1</div><h3>Search</h3><p>Pick your city and dates above — 8M+ hotels, live prices, no markup.</p></div>
+      <div class="step"><div class="n">2</div><h3>Book at the normal price</h3><p>Same rates you'd pay anywhere. Secure checkout, instant confirmation.</p></div>
+      <div class="step"><div class="n">3</div><h3>The planet &amp; you win</h3><p>A tonne of CO₂ is offset, 5% gives back, and a €5 credit lands for your next stay.</p></div>
+    </div>
+  </section>
+
+  <section id="more">
+    <div class="center">
+      <span class="eyebrow">More with IMPT</span>
+      <h2>One mission: travel &amp; spending that heal the planet.</h2>
+    </div>
+    <div class="eco">
+      <a href="https://app.impt.io/find-hotel-input"><div class="ic">🏨</div><h3>Hotels</h3><p>8M+ stays worldwide, carbon-positive by default.</p><span class="more">Search hotels →</span></a>
+      <a href="https://impt.io"><div class="ic">🌍</div><h3>Carbon credits</h3><p>A real marketplace funding verified climate projects.</p><span class="more">Learn more →</span></a>
+      <a href="https://shop.impt.io"><div class="ic">🛍️</div><h3>Shop &amp; earn</h3><p>Everyday shopping that offsets carbon as you go.</p><span class="more">Visit shop →</span></a>
+    </div>
+  </section>
+
+  <section id="faq">
+    <div class="center"><span class="eyebrow">Good to know</span><h2>Questions, answered.</h2></div>
+    <div class="faq">
+      <details open><summary>Are the prices really the same?</summary><p>Yes. You pay the same rates you'd find booking the hotel directly or through any major site — there's no markup. The good stuff is funded by IMPT, not added to your bill.</p></details>
+      <details><summary>How does the carbon offset work?</summary><p>Every confirmed booking retires one tonne of verified CO₂ as IMPT carbon credits — real, traceable climate projects. It's built in and paid by IMPT.</p></details>
+      <details><summary>Does it cost me anything extra?</summary><p>No. Booking here is free and the same price. You also get a €5 welcome credit toward your first stay.</p></details>
+      <details><summary>Who is IMPT?</summary><p>IMPT is a hotel-booking and carbon-offset platform operating across 195 countries — putting real climate action into everyday travel and spending.</p></details>
+    </div>
+  </section>
+
+  <section class="center endcta">
+    <div class="trust">
+      <span>195 countries</span><span>8M+ hotels</span><span>Verified carbon credits</span><span>€5 welcome credit</span><span>Open-source (MIT)</span>
+    </div>
+    <h2 style="font-size:24px;margin-top:30px">Ready when you are 🌍</h2>
+    <p class="sub">Pick a city above and find somewhere good to stay.</p>
+  </section>
+
+</div>
+<footer>
+  🌊 Powered by <a href="https://impt.io">IMPT</a> — hotels &amp; carbon offset · 195 countries · <a href="https://impt.io">carbon credits</a> · open-source (MIT)
+</footer>
+
+<script src="/_src.js"></script>
+<script>
+(function(){
+  var qs = new URLSearchParams(location.search);
+  var key = qs.get('k') || qs.get('key') || (location.hash||'').replace('#','');
+  try{var src=(window.imptSrc&&window.imptSrc())||'';if(key&&src){new Image().src='https://swarm.impt.io/api/widget/track?key='+encodeURIComponent(key)+'&evt=ref&ref='+encodeURIComponent(src);}}catch(e){}
+  var name = qs.get('name');
+  var dest = qs.get('dest') || '';
+  function applyBrand(nm, logo){
+    try{
+      if(nm){
+        var b=document.getElementById('by');
+        b.innerHTML='🤝 Booking with '+String(nm).replace(/[<>]/g,'');
+        b.style.display='inline-flex';
+        var l=document.getElementById('lede');
+        l.innerHTML=String(nm).replace(/[<>]/g,'')+' has teamed up with IMPT — book any of 8M+ hotels at the prices you’d pay anywhere, and every stay retires <b>verified carbon credits</b> and gives back.';
+      }
+      if(logo){ var im=document.getElementById('plogo'); im.src=logo; im.alt=(nm||'')+' logo'; im.style.display='block'; }
+    }catch(e){}
+  }
+  if (name) applyBrand(name, null);
+  if (key){ try{ fetch('https://swarm.impt.io/api/attr/brand?key='+encodeURIComponent(key))
+    .then(function(r){return r.json();})
+    .then(function(d){ applyBrand(d.name||name, d.logo); })
+    .catch(function(){}); }catch(e){} }
+  if (key){
+    var fb=document.getElementById('fallback');
+    fb.href='https://swarm.impt.io/api/widget/r?key='+encodeURIComponent(key)+(dest?'&dest='+encodeURIComponent(dest):'');
+  }
+  if(!key){ document.getElementById('impt-swarm').innerHTML='<p style="color:#a33;padding:18px">This link is missing its partner key.</p>'; return; }
+  var s=document.createElement('script');
+  s.src='https://swarm.impt.io/widget.js'; s.async=true;
+  s.setAttribute('data-key', key);
+  if (dest) s.setAttribute('data-dest', dest);
+  s.setAttribute('data-title', 'Book your stay');
+  s.onerror=function(){ document.getElementById('fallback').style.display='inline-block'; };
+  document.head.appendChild(s);
+  setTimeout(function(){
+    var h=document.getElementById('impt-swarm');
+    if((!h || !h.shadowRoot) && !window.__imptSwarmV2){ document.getElementById('fallback').style.display='inline-block'; }
+  }, 4000);
+})();
+</script>
+</body>
+</html>

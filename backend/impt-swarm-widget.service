@@ -1,0 +1,16 @@
+[Unit]
+Description=IMPT Swarm Widget API (port 2027)
+After=network.target
+
+[Service]
+Type=simple
+User=mike
+WorkingDirectory=/home/mike/impt-swarm-oss-2026-05-05/backend
+Environment=PYTHONUNBUFFERED=1
+EnvironmentFile=/home/mike/impt-swarm-oss-2026-05-05/backend/.env
+ExecStart=/home/mike/impt-swarm-oss-2026-05-05/backend/.venv/bin/python -m uvicorn swarm_widget_api:app --host 127.0.0.1 --port 2027 --workers 2
+Restart=on-failure
+RestartSec=3
+
+[Install]
+WantedBy=multi-user.target

@@ -47,5 +47,6 @@ else
   git commit -q -m "auto: widget code snapshot $(date -u +%F)" \
     --author="widget-backup <noreply@impt.io>"
   git push -q origin main
+  git push -q github main 2>/dev/null && echo "[sync_widget_code] pushed to GitHub too" || echo "[sync_widget_code] WARN: GitHub push failed"
   echo "[sync_widget_code] pushed snapshot $(date -u +%FT%TZ)"
 fi

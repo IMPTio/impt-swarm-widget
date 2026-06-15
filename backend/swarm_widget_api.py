@@ -72,6 +72,9 @@ GMAIL_CREDS = os.environ.get("SWARM_WIDGET_GMAIL_CREDS", "/home/mike/impt-manage
 GMAIL_SENDER = os.environ.get("SWARM_WIDGET_GMAIL_SENDER", "cto-office@impt.io")
 GMAIL_FROM_NAME = os.environ.get("SWARM_WIDGET_GMAIL_FROM_NAME", "IMPT Swarm")
 GMAIL_REPLY_TO = os.environ.get("SWARM_WIDGET_REPLY_TO", "mike@impt.io")
+# Mike wants a copy of EVERY localised welcome that goes to a widget holder, so he can audit quality.
+# BCC (not visible CC) — the customer never sees this address. Set "" to disable. (Mike 2026-06-15)
+WELCOME_AUDIT_BCC = os.environ.get("WIDGET_WELCOME_AUDIT_BCC", "mike@impt.io")
 
 # Meta Conversions API (server-side). Fires partner-signup as CompleteRegistration so Meta can
 # attribute + optimise the Widget campaign. Token/pixel in service .env. If META_CAPI_TEST_CODE is
@@ -435,7 +438,7 @@ def _em_welcome(name, key, api_token, vertical=None):
     return (subj,
             _em_shell(f"Your {wname} is live","Your key's active. Go live in 2 minutes — or reply and we'll install it for you.",body), text)
 
-def _em_send(to, subject, html, text) -> bool:
+def _em_send(to, subject, html, text, bcc="") -> bool:
     # deliverability gate — skip suppressed / bad-syntax / no-MX (Mike 2026-06-12).
     # Fail-open: a checker error must never block legitimate sends.
     try:
@@ -463,6 +466,7 @@ def _em_send(to, subject, html, text) -> bool:
         msg = MIMEMultipart("alternative")
         msg["to"] = to; msg["from"] = formataddr((GMAIL_FROM_NAME, GMAIL_SENDER))
         msg["reply-to"] = GMAIL_REPLY_TO; msg["subject"] = subject
+        if bcc: msg["bcc"] = bcc   # audit copy (Gmail delivers to bcc, strips header — customer never sees it)
         msg.attach(MIMEText(text, "plain")); msg.attach(MIMEText(html, "html"))
         raw = base64.urlsafe_b64encode(msg.as_bytes()).decode()
         result = service.users().messages().send(userId="me", body={"raw": raw}).execute()
@@ -485,7 +489,7 @@ def send_welcome_email(email: str, name: Optional[str], partner_key: str, api_to
         subject, html, text = build_welcome(name, partner_key, vertical)
     except Exception:
         subject, html, text = _em_welcome(name, partner_key, api_token, vertical=vertical)
-    return _em_send(email, subject, html, text)
+    return _em_send(email, subject, html, text, bcc=WELCOME_AUDIT_BCC)
 
 
 # ── models ──────────────────────────────────────────────────────────

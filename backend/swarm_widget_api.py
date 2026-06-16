@@ -49,7 +49,11 @@ LANDER = "https://app.impt.io/find-hotel-input"
 # Each is an exciting, per-vertical marketing+capture page (hero/destinations/form) that
 # binds bookings to the partner key. scuba/lgbtq/clubs/brands keep /worlds until built.
 STAYS_BASE = "https://swarm.impt.io/stays"
-STAYS_VERTICALS = {"surf", "walks", "mtb", "ski", "pets", "golf", "yoga"}
+# All 12 verticals now have a local Stays landing page (2026-06-15) at
+# swarm.impt.io/stays/<v>/. scuba/lgbtq/clubs/brands/widget(generic) used to fall
+# back to /worlds or the bare receipt — now every widget lands on its own page.
+STAYS_VERTICALS = {"surf", "walks", "mtb", "ski", "pets", "golf", "yoga",
+                   "widget", "lgbtq", "scuba", "clubs", "brands"}
 VERTICAL_LANDERS = {
     "mtb":    "https://swarm.impt.io/stays/mtb/",
     "surf":   "https://swarm.impt.io/stays/surf/",
@@ -58,10 +62,11 @@ VERTICAL_LANDERS = {
     "pets":   "https://swarm.impt.io/stays/pets/",
     "golf":   "https://swarm.impt.io/stays/golf/",
     "yoga":   "https://swarm.impt.io/stays/yoga/",
-    "scuba":  "https://impt.io/worlds",
-    "lgbtq":  "https://impt.io/worlds",
-    "clubs":  "https://impt.io/worlds",
-    "brands": "https://impt.io/worlds",
+    "scuba":  "https://swarm.impt.io/stays/scuba/",
+    "lgbtq":  "https://swarm.impt.io/stays/lgbtq/",
+    "clubs":  "https://swarm.impt.io/stays/clubs/",
+    "brands": "https://swarm.impt.io/stays/brands/",
+    "widget": "https://swarm.impt.io/stays/widget/",
 }
 COOKIE_DAYS = 90
 COMMISSION_PCT = 0.05
@@ -489,6 +494,37 @@ def send_welcome_email(email: str, name: Optional[str], partner_key: str, api_to
         subject, html, text = build_welcome(name, partner_key, vertical)
     except Exception:
         subject, html, text = _em_welcome(name, partner_key, api_token, vertical=vertical)
+    return _em_send(email, subject, html, text, bcc=WELCOME_AUDIT_BCC)
+
+
+def esc_html(s) -> str:
+    return (str(s if s is not None else "").replace("&", "&amp;").replace("<", "&lt;")
+            .replace(">", "&gt;").replace('"', "&quot;"))
+
+
+def send_login_email(email: str, name: Optional[str], partner_key: str, api_token: str, vertical: Optional[str] = None) -> bool:
+    """Passwordless 'Log in' / lost-link recovery — emails the partner their dashboard magic-link
+    and personal booking link. This is what makes the website 'Log in' actually work: the widget has
+    no password, so there was previously no way to get your link back (the source of the 'invalid' mess)."""
+    fname = ((name or "").strip().split(" ")[0]) if (name and name.strip()) else "there"
+    dash = f"{PUBLIC_BASE}/dashboard?k={partner_key}&t={api_token}"
+    link = f"{PUBLIC_BASE}/api/widget/r?key={partner_key}"
+    subject = "Your IMPT dashboard link 🔑"
+    html = f"""<!DOCTYPE html><html><body style="margin:0;background:#FAF7F0;font-family:Inter,system-ui,Arial,sans-serif;color:#08423a">
+<div style="max-width:520px;margin:0 auto;padding:32px 24px">
+  <div style="font-weight:800;font-size:22px;letter-spacing:-.5px">impt</div>
+  <h1 style="font-size:22px;margin:24px 0 8px">Here's your link, {esc_html(fname)} 👋</h1>
+  <p style="font-size:15px;line-height:1.6;color:#33514b">There's no password to remember — just use the link below to open your live earnings dashboard any time. Bookmark it.</p>
+  <p style="margin:28px 0"><a href="{dash}" style="background:#0a8f5b;color:#fff;text-decoration:none;padding:14px 26px;border-radius:999px;font-weight:700;font-size:15px;display:inline-block">Open my dashboard &rarr;</a></p>
+  <p style="font-size:14px;line-height:1.6;color:#33514b">And here's your <strong>personal booking link</strong> — share it anywhere, earn 5% on every booking:</p>
+  <p style="font-size:14px"><a href="{link}" style="color:#0a8f5b">{link}</a></p>
+  <p style="font-size:13px;color:#7c8b87;margin-top:28px">If you didn't ask for this, you can ignore it — nothing changes.</p>
+  <p style="font-size:13px;color:#7c8b87">IMPT — hotels that pay you back &amp; offset carbon. 8M+ hotels worldwide.</p>
+</div></body></html>"""
+    text = (f"Here's your link, {fname}.\n\n"
+            f"There's no password — just open your dashboard with this link (bookmark it):\n{dash}\n\n"
+            f"Your personal booking link (share it, earn 5% per booking):\n{link}\n\n"
+            f"If you didn't ask for this, ignore it.\n\nIMPT — hotels that pay you back & offset carbon.")
     return _em_send(email, subject, html, text, bcc=WELCOME_AUDIT_BCC)
 
 
@@ -1129,6 +1165,49 @@ def me(authorization: str = Header(...)):
         "clicks_30d": clicks_30d,
         "bookings": [dict(b) for b in bookings],
     }
+
+
+def _login_rate_ok(ip_h: str) -> bool:
+    # Cap login-link requests per IP/hour so the endpoint can't be used to spam someone's inbox.
+    with db() as c:
+        n = c.execute(
+            "SELECT COUNT(*) AS n FROM audit_log WHERE ip_hash=? AND action LIKE 'login.%' AND ts > ?",
+            (ip_h, int(time.time()) - 3600),
+        ).fetchone()["n"]
+    return n < 10
+
+
+class LoginReq(BaseModel):
+    email: EmailStr
+
+
+@app.post("/api/widget/login")
+def widget_login(body: LoginReq, request: Request):
+    """Passwordless 'Log in': partner enters their email and we email their dashboard magic-link.
+    The widget has no password — this closes the loop that used to dead-end with 'invalid'.
+    Always returns ok:true (no account enumeration). Rate-limited per IP."""
+    ip_h = hash_ip(request.client.host if request.client else "")
+    if not _login_rate_ok(ip_h):
+        raise HTTPException(429, "too many login requests — please try again in a little while")
+    email = (body.email or "").strip()
+    sent = False
+    if is_valid_email(email):
+        with db() as c:
+            row = c.execute(
+                "SELECT key, api_token, name, vertical FROM partners "
+                "WHERE lower(email)=lower(?) AND status='active' AND api_token IS NOT NULL "
+                "ORDER BY created_at DESC LIMIT 1",
+                (email,),
+            ).fetchone()
+        if row:
+            sent = send_login_email(email, row["name"], row["key"], row["api_token"], vertical=row["vertical"])
+            audit("login.link_sent", subject=row["key"], detail={"email": email, "sent": sent}, ip_hash=ip_h)
+        else:
+            audit("login.no_account", subject=email, detail=None, ip_hash=ip_h)
+    else:
+        audit("login.bad_email", subject=email, detail=None, ip_hash=ip_h)
+    # Generic response either way — never reveal whether an account exists.
+    return {"ok": True, "message": "If that email has an IMPT partner account, we've just sent your dashboard link. Check your inbox (and spam)."}
 
 
 # ── omnichannel additions (intents + hotels proxy + TG/WA/FB bots) ───

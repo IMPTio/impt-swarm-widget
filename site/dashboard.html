@@ -154,6 +154,17 @@
   window.copyLink=function(){var i=$("url");i.select();try{navigator.clipboard.writeText(i.value);}catch(e){}
     var b=$("copyb");b.textContent="Copied ✓";setTimeout(function(){b.textContent="Copy";},1600);};
 
+  window.doLogin=function(){
+    var e=($("loginEmail").value||"").trim(), m=$("loginMsg"), b=$("loginBtn");
+    if(!e||e.indexOf("@")<1){ m.style.display="block"; m.style.color="#b04632"; m.textContent="Please enter a valid email."; return; }
+    b.disabled=true; b.textContent="Sending…";
+    fetch(BASE+"/api/widget/login",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({email:e})})
+      .then(function(r){return r.json();})
+      .then(function(d){ b.disabled=false; b.textContent="Email me my link"; m.style.display="block"; m.style.color="#0a8f5b";
+        m.textContent=(d&&d.message)||"Check your inbox for your dashboard link."; })
+      .catch(function(){ b.disabled=false; b.textContent="Email me my link"; m.style.display="block"; m.style.color="#b04632"; m.textContent="Something went wrong — please try again."; });
+  };
+
   window.saveBrand=function(){
     var nm=($("bname").value||"").trim(); $("bok").style.display="none"; $("berr").style.display="none";
     if(!token){$("berr").textContent="Open your dashboard link from your welcome email to save.";$("berr").style.display="block";return;}
@@ -212,7 +223,22 @@
     return;
   }
 
-  if(!token){ $("banner").innerHTML='<div class="card pad banner"><strong class="disp" style="font-size:16px">Open the dashboard link from your welcome email</strong> to see your live numbers. You can still grab your share tools below.</div>'; $("hi").textContent="Your Partner Dashboard"; return; }
+  if(!token){
+    $("banner").innerHTML=
+      '<div class="card pad banner">'+
+        '<strong class="disp" style="font-size:17px">Log in to your dashboard</strong>'+
+        '<div class="muted" style="margin:6px 0 12px;font-size:14px">No password needed — enter the email you signed up with and we\'ll send your private dashboard link.</div>'+
+        '<div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">'+
+          '<input id="loginEmail" type="email" autocomplete="email" placeholder="you@email.com" style="flex:1;min-width:200px;padding:12px 14px;border-radius:10px;border:1px solid rgba(8,66,58,.2);font:inherit">'+
+          '<button id="loginBtn" class="btn" onclick="doLogin()">Email me my link</button>'+
+        '</div>'+
+        '<div id="loginMsg" style="margin-top:10px;font-size:14px;display:none"></div>'+
+        '<div class="muted" style="margin-top:12px;font-size:13px">New here? <a href="https://impt.io/widget" style="color:#0a8f5b">Get your free widget &amp; link →</a></div>'+
+      '</div>';
+    $("hi").textContent="Your Partner Dashboard";
+    var le=$("loginEmail"); if(le){ le.addEventListener("keydown",function(ev){ if(ev.key==="Enter"){ doLogin(); } }); }
+    return;
+  }
 
   fetch(BASE+"/api/widget/partners/me",{headers:{Authorization:"Bearer "+token}})
     .then(function(r){if(!r.ok)throw new Error("HTTP "+r.status);return r.json();})

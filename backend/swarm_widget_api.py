@@ -66,8 +66,28 @@ VERTICAL_LANDERS = {
     "lgbtq":  "https://swarm.impt.io/stays/lgbtq/",
     "clubs":  "https://swarm.impt.io/stays/clubs/",
     "brands": "https://swarm.impt.io/stays/brands/",
-    "widget": "https://swarm.impt.io/stays/widget/",
+    # NOTE: generic "widget" is intentionally NOT mapped — a generic partner's visitors
+    # must land on the real hotel SEARCH (LANDER = app.impt.io/find-hotel-input), not the
+    # /stays/widget/ marketing page (which has a "Get my widget" signup CTA). Fixes
+    # adventuresbyjerry.com going to signup instead of search (Mike 2026-06-16).
 }
+
+# --- REDIRECT SAFETY GUARD (Mike 2026-06-16) ---------------------------------------
+# A partner's widget must send VISITORS to a page they can BOOK from — never a signup/recruit
+# page. On 2026-06-16 a stray "widget" entry here silently routed ~791 generic partners to the
+# /stays/widget/ signup page instead of the hotel search. Self-heal on boot so a bad edit can
+# never recur silently: drop the generic "widget" key, and drop any vertical that doesn't point
+# at a real /stays/<v>/ page — both then fall back to the safe hotel SEARCH (LANDER).
+import logging as _logging
+if "widget" in VERTICAL_LANDERS:
+    _logging.error("WIDGET-GUARD: removed 'widget' from VERTICAL_LANDERS — generic partners must hit the hotel search, not /stays/widget/")
+    VERTICAL_LANDERS.pop("widget", None)
+for _v, _u in list(VERTICAL_LANDERS.items()):
+    if not str(_u).startswith("https://swarm.impt.io/stays/"):
+        _logging.error(f"WIDGET-GUARD: removed vertical '{_v}' -> '{_u}' (not a /stays/ page); it now falls back to the hotel search")
+        VERTICAL_LANDERS.pop(_v, None)
+assert LANDER.startswith("https://app.impt.io/find-hotel"), "WIDGET-GUARD: LANDER must be the hotel search"
+
 COOKIE_DAYS = 90
 COMMISSION_PCT = 0.05
 WEBHOOK_SECRET = os.environ.get("SWARM_WIDGET_WEBHOOK_SECRET", "set-me-in-env")
@@ -891,6 +911,13 @@ def _go_page(key: str, api_token: str, vertical: str) -> str:
     link = f"{PUBLIC_BASE}/api/widget/r?key={key}"
     qr = f"{PUBLIC_BASE}/api/widget/qr/{key}.png"
     dash = f"{PUBLIC_BASE}/dashboard?k={key}&t={api_token}"
+    # WhatsApp conversion door: pull the new partner into a live chat with the widget agent,
+    # pre-filled with their key so the agent recognises them instantly. Tapping this opens the
+    # 24h messaging window (no template needed) AND captures their number — the input the whole
+    # conversion system was missing (Mike 2026-06-16).
+    from urllib.parse import quote as _q
+    _wamsg = f"Hi! I just set up my IMPT {vlabel} widget (key {key}). Help me go live and earn my first commission?"
+    wa_url = "https://wa.me/353874456007?text=" + _q(_wamsg)
     snippet = f'<script src="{PUBLIC_BASE}/widget.js" data-key="{key}" async></script>\n<div id="impt-swarm"></div>'
     snippet_esc = snippet.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")
     body = f"""<div class="wrap">
@@ -910,6 +937,11 @@ def _go_page(key: str, api_token: str, vertical: str) -> str:
     <div class="lbl">Your personal link — share it anywhere</div>
     <div class="row" style="margin-top:12px"><input class="field" id="lnk" value="{link}" readonly><button class="btn" onclick="cp()">Copy</button><button class="btn ghost" id="sh">Share</button></div>
     <div class="ok" id="lok">Copied ✓</div>
+  </section>
+  <section class="card pad mt fade d2" style="border:1.5px solid #25D366">
+    <div class="lbl">Want a hand? Set it up with us on WhatsApp 💬</div>
+    <div class="muted" style="font-size:14px;margin:8px 0 12px">Tap and we'll get you live in 2 minutes, share your link the smart way, and help you earn your first commission. A real person + our assistant reply fast.</div>
+    <a class="btn" style="background:#25D366;color:#fff;text-decoration:none;display:inline-block" href="{wa_url}">Message us on WhatsApp →</a>
   </section>
   <section class="card pad mt fade d3">
     <div class="lbl">Put it on your phone / posters</div>

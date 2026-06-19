@@ -1030,6 +1030,8 @@ def redirect(request: Request, key: str = Query(..., min_length=4, max_length=64
     for pname, pval in (("checkIn", checkIn), ("checkOut", checkOut), ("adults", adults), ("rooms", rooms)):
         if pval:
             qs.append(f"{pname}=" + quote(str(pval)))
+    qs.append("step=results")
+    qs.append("childAges=")
     sep = "&" if "?" in base else "?"
     target = base + (sep + "&".join(qs) if qs else "")
     resp = RedirectResponse(url=target, status_code=302)

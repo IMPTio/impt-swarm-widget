@@ -55,17 +55,8 @@ STAYS_BASE = "https://swarm.impt.io/stays"
 STAYS_VERTICALS = {"surf", "walks", "mtb", "ski", "pets", "golf", "yoga",
                    "widget", "lgbtq", "scuba", "clubs", "brands"}
 VERTICAL_LANDERS = {
-    "mtb":    "https://swarm.impt.io/stays/mtb/",
-    "surf":   "https://swarm.impt.io/stays/surf/",
-    "walks":  "https://swarm.impt.io/stays/walks/",
-    "ski":    "https://swarm.impt.io/stays/ski/",
-    "pets":   "https://swarm.impt.io/stays/pets/",
-    "golf":   "https://swarm.impt.io/stays/golf/",
-    "yoga":   "https://swarm.impt.io/stays/yoga/",
-    "scuba":  "https://swarm.impt.io/stays/scuba/",
-    "lgbtq":  "https://swarm.impt.io/stays/lgbtq/",
-    "clubs":  "https://swarm.impt.io/stays/clubs/",
-    "brands": "https://swarm.impt.io/stays/brands/",
+    # All vertical landing pages intentionally omitted — partners go straight to hotel search
+    # (landing pages are for marketing/discovery; widget card shows on direct visit with key)
     # NOTE: generic "widget" is intentionally NOT mapped — a generic partner's visitors
     # must land on the real hotel SEARCH (LANDER = app.impt.io/find-hotel-input), not the
     # /stays/widget/ marketing page (which has a "Get my widget" signup CTA). Fixes
@@ -511,7 +502,7 @@ def send_welcome_email(email: str, name: Optional[str], partner_key: str, api_to
         import os as _os, sys as _sys
         _sys.path.insert(0, _os.path.dirname(_os.path.abspath(__file__)))
         from designed_welcome import build_welcome
-        subject, html, text = build_welcome(name, partner_key, vertical)
+        subject, html, text = build_welcome(name, partner_key, vertical, api_token=api_token)
     except Exception:
         subject, html, text = _em_welcome(name, partner_key, api_token, vertical=vertical)
     return _em_send(email, subject, html, text, bcc=WELCOME_AUDIT_BCC)
@@ -813,6 +804,7 @@ def quickstart(body: QuickStartReq, request: Request):
 class AttachEmailReq(BaseModel):
     key: str = Field(..., min_length=4, max_length=64)
     email: EmailStr
+    vertical: Optional[str] = Field(None, pattern="^(widget|mtb|surf|golf|lgbtq|walks|scuba|clubs|brands|yoga|ski|pets)$")
 
 
 @app.post("/api/widget/attach-email")
@@ -846,10 +838,11 @@ def attach_email(body: AttachEmailReq, request: Request):
     audit("quickstart.email_attached", subject=body.key, detail={"email": body.email}, ip_hash=ip_h)
     try:
         import threading
+        _v = (body.vertical or row["vertical"] or "widget").strip().lower()
         threading.Thread(
             target=send_welcome_email,
             args=(body.email, row["name"], body.key, row["api_token"]),
-            kwargs={"vertical": row["vertical"]}, daemon=True,
+            kwargs={"vertical": _v}, daemon=True,
         ).start()
     except Exception as e:
         print(f"[swarm-widget] attach-email welcome thread failed: {e}", flush=True)
@@ -869,7 +862,7 @@ def widget_go(request: Request, v: Optional[str] = None):
     if ck:
         with db() as c:
             row = c.execute("SELECT key,api_token,status,vertical FROM partners WHERE key=?", (ck,)).fetchone()
-        if row and row["status"] == "active":
+        if row and row["status"] == "active" and (row["vertical"] or "widget") == vertical:
             key, api_token, vertical = row["key"], row["api_token"], (row["vertical"] or vertical)
     minted = False
     if not key:
@@ -1088,6 +1081,21 @@ def brand(key: str = Query(..., max_length=64)):
                         headers={"Access-Control-Allow-Origin": "*", "Cache-Control": "public, max-age=300"})
 
 
+
+
+@app.get("/api/widget/config")
+def widget_config(key: str = Query(..., max_length=64)):
+    """Public: returns vertical for a partner key — widget.js uses this to render vertical-specific UI."""
+    vertical = "widget"
+    with db() as c:
+        try:
+            r = c.execute("SELECT vertical FROM partners WHERE key=?", (key,)).fetchone()
+            if r and r[0]:
+                vertical = r[0]
+        except Exception:
+            pass
+    return JSONResponse({"vertical": vertical},
+                        headers={"Access-Control-Allow-Origin": "*", "Cache-Control": "public, max-age=300"})
 class _SetName(BaseModel):
     key: str = Field(..., max_length=64)
     token: str = Field(..., max_length=128)

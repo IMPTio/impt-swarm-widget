@@ -17,6 +17,7 @@
   var TITLE = (me && me.getAttribute('data-title')) || 'Book your stay';  /* v2.1 brand name */
   var HOST = location.host;
   var BRAND = 'https://swarm.impt.io/api/widget/brand';
+  var CONFIG_URL = 'https://swarm.impt.io/api/widget/config';
   var POS = (me && me.getAttribute('data-position')) || 'auto';
   function loadBrand(rt) {
     try {
@@ -55,6 +56,218 @@
     window.open(url, '_blank', 'noopener');
   }
 
+
+  var SURF_DESTS = [
+    ['Asia','Pecatu, Bali — 9 breaks','Pecatu Bali'],
+    ['Asia','Siargao, Philippines — 8 breaks','Siargao'],
+    ['Asia','Canggu, Bali — 6 breaks','Canggu Bali'],
+    ['Asia','Uluwatu, Bali — 6 breaks','Uluwatu Bali'],
+    ['Asia','Maldives — 5 breaks','Maldives'],
+    ['Asia','Arugam Bay, Sri Lanka — 4 breaks','Arugam Bay'],
+    ['Asia','Kuta Lombok — 3 breaks','Kuta Lombok'],
+    ['Asia','Kuta, Bali — 3 breaks','Kuta Bali'],
+    ['Asia','Nusa Lembongan, Bali — 3 breaks','Nusa Lembongan'],
+    ['Asia','Matara, Sri Lanka — 3 breaks','Matara Sri Lanka'],
+    ['Asia','Tabanan, Bali — 3 breaks','Tabanan Bali'],
+    ['Asia','Tel Aviv, Israel — 3 breaks','Tel Aviv'],
+    ['Asia','Midigama, Sri Lanka — 2 breaks','Midigama'],
+    ['Asia','Weligama, Sri Lanka — 1 break','Weligama'],
+    ['Asia','Ahangama, Sri Lanka — 1 break','Ahangama'],
+    ['Asia','Keramas, Bali — 1 break','Keramas Bali'],
+    ['Asia','Sanur, Bali — 1 break','Sanur Bali'],
+    ['Asia','Serangan, Bali — 1 break','Serangan Bali'],
+    ['Asia','Sumba, Indonesia — 1 break','Sumba'],
+    ['Asia','Sumbawa, Indonesia — 1 break','Sumbawa'],
+    ['Asia','Nias, Indonesia — 1 break','Nias'],
+    ['Asia','Cimaja, Java — 1 break','Cimaja Java'],
+    ['Asia','Timor — 1 break','Timor'],
+    ['Asia','West Papua — 1 break','West Papua'],
+    ['Asia','Hainan Island, China — 1 break','Hainan Island'],
+    ['Asia','Chigasaki, Japan — 1 break','Chigasaki'],
+    ['Asia','Taiwan — 1 break','Taiwan'],
+    ['Europe','Ericeira, Portugal — 12 breaks','Ericeira'],
+    ['Europe','Capbreton, France — 7 breaks','Capbreton'],
+    ['Europe','Seignosse, France — 6 breaks','Seignosse'],
+    ['Europe','Fuerteventura — 5 breaks','Fuerteventura Canary Islands'],
+    ['Europe','Hossegor, France — 4 breaks','Hossegor'],
+    ['Europe','Aljezur, Portugal — 3 breaks','Aljezur'],
+    ['Europe','Nazar\u00e9, Portugal — 3 breaks','Nazar\u00e9'],
+    ['Europe','Landes, France — 3 breaks','Landes France'],
+    ['Europe','Basque Coast, France — 3 breaks','Basque Coast France'],
+    ['Europe','Peniche, Portugal — 2 breaks','Peniche'],
+    ['Europe','Algarve, Portugal — 2 breaks','Algarve'],
+    ['Europe','Bundoran, Ireland — 2 breaks','Bundoran'],
+    ['Europe','Figueira da Foz, Portugal — 2 breaks','Figueira da Foz'],
+    ['Europe','Canary Islands, Spain — 2 breaks','Canary Islands'],
+    ['Europe','Biarritz, France — 1 break','Biarritz'],
+    ['Europe','Lagos, Portugal — 1 break','Lagos Portugal'],
+    ['Europe','Comporta, Portugal — 1 break','Comporta'],
+    ['Europe','Santa Cruz, Portugal — 1 break','Santa Cruz Portugal'],
+    ['Europe','Sintra, Portugal — 1 break','Sintra'],
+    ['Europe','Newquay, UK — 1 break','Newquay'],
+    ['Europe','Pembrokeshire, Wales — 1 break','Pembrokeshire Wales'],
+    ['Europe','Zarautz, Spain — 1 break','Zarautz'],
+    ['Europe','San Sebasti\u00e1n, Spain — 1 break','San Sebasti\u00e1n'],
+    ['Europe','Sopelana, Spain — 1 break','Sopelana'],
+    ['Europe','Cantabria, Spain — 1 break','Cantabria'],
+    ['Europe','Vejer de la Frontera, Spain — 1 break','Vejer de la Frontera C\u00e1diz'],
+    ['Europe','Hoddevik, Norway — 1 break','Hoddevik'],
+    ['Europe','Lofoten Islands, Norway — 1 break','Lofoten Islands'],
+    ['Americas','Oahu, Hawaii — 18 breaks','Oahu Hawaii'],
+    ['Americas','Tamarindo, Costa Rica — 9 breaks','Tamarindo Guanacaste'],
+    ['Americas','San Clemente, California — 8 breaks','San Clemente California'],
+    ['Americas','Popoyo, Nicaragua — 8 breaks','Popoyo Tola'],
+    ['Americas','Rinc\u00f3n, Puerto Rico — 7 breaks','Rinc\u00f3n'],
+    ['Americas','Puntarenas, Costa Rica — 7 breaks','Puntarenas'],
+    ['Americas','Tumbes, Peru — 7 breaks','Tumbes'],
+    ['Americas','Guanacaste, Costa Rica — 6 breaks','Guanacaste'],
+    ['Americas','Lima, Peru — 6 breaks','Lima'],
+    ['Americas','Lima Province, Peru — 6 breaks','Lima Province'],
+    ['Americas','San Juan del Sur, Nicaragua — 5 breaks','San Juan del Sur'],
+    ['Americas','Piura, Peru — 5 breaks','Piura'],
+    ['Americas','Lambayeque, Peru — 4 breaks','Lambayeque Peru'],
+    ['Americas','Waikiki, Hawaii — 3 breaks','Waikiki Honolulu Hawaii'],
+    ['Americas','Santa Cruz, California — 3 breaks','Santa Cruz California'],
+    ['Americas','Encinitas, California — 3 breaks','Encinitas California'],
+    ['Americas','Outer Banks, NC — 3 breaks','Outer Banks North Carolina'],
+    ['Americas','Nosara, Costa Rica — 3 breaks','Nosara Guanacaste'],
+    ['Americas','Santa Teresa, Costa Rica — 3 breaks','Santa Teresa Puntarenas'],
+    ['Americas','Puerto Viejo, Costa Rica — 3 breaks','Puerto Viejo de Talamanca Lim\u00f3n'],
+    ['Americas','Puerto Escondido, Mexico — 3 breaks','Puerto Escondido Oaxaca'],
+    ['Americas','Nayarit, Mexico — 3 breaks','Nayarit'],
+    ['Americas','Tofino, Canada — 3 breaks','Tofino British Columbia'],
+    ['Americas','Arequipa, Peru — 2 breaks','Arequipa Peru'],
+    ['Americas','El Tunco, El Salvador — 2 breaks','El Tunco La Libertad'],
+    ['Americas','Puerto Rico — 2 breaks','Puerto Rico'],
+    ['Americas','Kauai, Hawaii — 1 break','Kauai Hawaii'],
+    ['Americas','Maui, Hawaii — 1 break','Maui Hawaii'],
+    ['Americas','Malibu, California — 1 break','Malibu California'],
+    ['Americas','Half Moon Bay, CA — 1 break','Half Moon Bay California'],
+    ['Americas','Rockaway Beach, NY — 1 break','Rockaway Beach New York'],
+    ['Americas','San Onofre, CA — 1 break','San Onofre California'],
+    ['Americas','Baja California, Mexico — 1 break','Baja California'],
+    ['Americas','Lobitos, Peru — 1 break','Lobitos Piura'],
+    ['Americas','M\u00e1ncora, Peru — 1 break','M\u00e1ncora Piura'],
+    ['Americas','Paracas, Peru — 1 break','Paracas Ica'],
+    ['Americas','Trujillo, Peru — 1 break','Trujillo Peru'],
+    ['Americas','Bocas del Toro, Panama — 1 break','Bocas del Toro'],
+    ['Americas','Ped\u00e1s\u00ed, Panama — 1 break','Ped\u00e1s\u00ed Los Santos'],
+    ['Americas','El Sunzal, El Salvador — 1 break','El Sunzal La Libertad'],
+    ['Americas','Pichilemu, Chile — 1 break','Pichilemu'],
+    ['Americas','Florian\u00f3polis, Brazil — 1 break','Florian\u00f3polis'],
+    ['Americas','Anguilla — 1 break','Anguilla'],
+    ['Americas','Antigua — 1 break','Antigua'],
+    ['Americas','Barbados — 1 break','Barbados'],
+    ['Americas','Grenada — 1 break','Grenada'],
+    ['Americas','Jamaica — 1 break','Jamaica'],
+    ['Africa','Jeffreys Bay, South Africa — 10 breaks','Jeffreys Bay'],
+    ['Africa','Taghazout, Morocco — 4 breaks','Taghazout'],
+    ['Africa','Muizenberg, Cape Town — 1 break','Muizenberg Cape Town'],
+    ['Africa','Cape Peninsula — 1 break','Cape Peninsula'],
+    ['Africa','Cape St Francis — 1 break','Cape St Francis'],
+    ['Africa','Tofo, Mozambique — 1 break','Tofo'],
+    ['Pacific','Byron Bay, Australia — 9 breaks','Byron Bay NSW'],
+    ['Pacific','Gold Coast, Australia — 9 breaks','Gold Coast Queensland'],
+    ['Pacific','Byron Shire, Australia — 9 breaks','Byron Shire NSW'],
+    ['Pacific','Tavarua, Fiji — 7 breaks','Tavarua Fiji'],
+    ['Pacific','Raglan, New Zealand — 3 breaks','Raglan'],
+    ['Pacific','Brunswick Heads, Australia — 2 breaks','Brunswick Heads NSW'],
+    ['Pacific','Ballina, Australia — 1 break','Ballina NSW'],
+    ['Pacific','Noosa Heads, Australia — 1 break','Noosa Heads Queensland'],
+    ['Pacific','Manly, Australia — 1 break','Manly NSW'],
+    ['Pacific','Queenstown, New Zealand — 1 break','Queenstown'],
+    ['Pacific','Samoa — 1 break','Samoa'],
+    ['Pacific','Vanuatu — 1 break','Vanuatu'],
+    ['Pacific','Papua New Guinea — 1 break','Papua New Guinea']
+  ];
+
+  function buildSurfOpts(region) {
+    var opts = '<option value="">Choose a surf spot\u2026</option>';
+    var list = region ? SURF_DESTS.filter(function(d){return d[0]===region;}) : SURF_DESTS;
+    list.forEach(function(d){ opts += '<option value="'+d[2]+'">'+d[1]+'</option>'; });
+    return opts;
+  }
+
+  // Colour themes per vertical — deep1/deep2 (header gradient) + bright (focus/btn accent)
+  var WIDGET_THEMES = {
+    surf:   { d1:'#03224c', d2:'#0a6eaa', br:'#2CA6DF', ca:'#b3d9f0', tx:'#0c2340', ft:'#eef6fc', fc:'#5b8fa8', fb:'#d0e9f5' },
+    mtb:    { d1:'#3d1a08', d2:'#B8541E', br:'#E08A3C', ca:'#f5d9c0', tx:'#2a1005', ft:'#fdf3ec', fc:'#7a4020', fb:'#f0cba8' },
+    walks:  { d1:'#142b18', d2:'#2F5D3A', br:'#6BA15B', ca:'#c8e0c0', tx:'#142b18', ft:'#f0f7ee', fc:'#3a6040', fb:'#b0d4a8' },
+    ski:    { d1:'#0d2238', d2:'#2E6B8A', br:'#7FB8D8', ca:'#bcd8ec', tx:'#0d2238', ft:'#edf5fb', fc:'#2E6B8A', fb:'#a8cce0' },
+    pets:   { d1:'#4a2800', d2:'#C2773A', br:'#E0A86B', ca:'#f5dfc0', tx:'#3a1f00', ft:'#fdf5ec', fc:'#8a5020', fb:'#f0cfa0' },
+    golf:   { d1:'#0a2e18', d2:'#1F6B3A', br:'#62B36C', ca:'#c0dcc5', tx:'#0a2e18', ft:'#eef7f0', fc:'#1F6B3A', fb:'#a8d0b0' },
+    yoga:   { d1:'#253d30', d2:'#5A7D6B', br:'#9DC4B0', ca:'#c8ddd5', tx:'#253d30', ft:'#f0f6f3', fc:'#5A7D6B', fb:'#b0ccc0' },
+    lgbtq:  { d1:'#5a0a3f', d2:'#B81C8C', br:'#E84BC0', ca:'#f0b8e0', tx:'#3a0828', ft:'#fdf0f8', fc:'#B81C8C', fb:'#e8a0d0' },
+    scuba:  { d1:'#03243a', d2:'#0B5E78', br:'#2FA8C8', ca:'#b0d8e8', tx:'#03243a', ft:'#eaf6fb', fc:'#0B5E78', fb:'#98c8dc' },
+    clubs:  { d1:'#0d1e40', d2:'#1B3A6B', br:'#4C7AC0', ca:'#bccce8', tx:'#0d1e40', ft:'#eef2fb', fc:'#1B3A6B', fb:'#a8bcd8' },
+    brands: { d1:'#3a2e00', d2:'#9A7B12', br:'#C9A227', ca:'#ecddb0', tx:'#2a2000', ft:'#faf6e8', fc:'#7a6010', fb:'#e0cc90' },
+    widget: { d1:'#052e1a', d2:'#0F6B3F', br:'#2FB06A', ca:'#b8dcc8', tx:'#052e1a', ft:'#edf7f2', fc:'#0F6B3F', fb:'#a0ccb4' }
+  };
+
+  function loadSurf(rt) {
+    try {
+      fetch(CONFIG_URL + '?key=' + encodeURIComponent(KEY))
+        .then(function(r){ return r.json(); })
+        .then(function(cfg) {
+          if (!cfg || !cfg.vertical) return;
+          var v = cfg.vertical;
+          var th = WIDGET_THEMES[v];
+          // Apply vertical colour theme to shadow DOM (skip generic 'widget' — uses base CSS default look)
+          if (th && v !== 'widget') {
+            var vStyle = rt.getElementById('v-css-override');
+            if (!vStyle) {
+              vStyle = document.createElement('style');
+              vStyle.id = 'v-css-override';
+              vStyle.textContent =
+                '.hd{background:linear-gradient(160deg,'+th.d1+' 0%,'+th.d2+' 100%)!important;box-shadow:0 4px 24px rgba(0,0,0,.28)!important}' +
+                '.fab{background:linear-gradient(135deg,'+th.d1+' 0%,'+th.d2+' 100%)!important;box-shadow:0 10px 30px -8px rgba(0,0,0,.4)!important}' +
+                '.hd h4{color:#ffffff!important;font-size:17px!important;font-weight:700!important}' +
+                '.hd p{color:rgba(255,255,255,.82)!important}' +
+                '.card{border-color:'+th.ca+'!important}' +
+                'label{color:'+th.d2+'!important;font-weight:700!important;letter-spacing:.16em!important}' +
+                'input,select{color:'+th.tx+'!important;border-color:'+th.ca+'!important;background:#fafaf8!important}' +
+                'input:focus,select:focus{border-color:'+th.br+'!important;box-shadow:0 0 0 3px rgba(128,128,128,.15)!important;background:#fff!important}' +
+                '.btn{background:linear-gradient(135deg,'+th.br+','+th.d2+')!important;color:#ffffff!important;font-weight:700!important;box-shadow:0 4px 18px -4px rgba(0,0,0,.3)!important}' +
+                '.btn:hover{filter:brightness(1.08)!important}' +
+                '.ft{background:'+th.ft+'!important;color:'+th.fc+'!important;border-top:1px solid '+th.fb+'!important}' +
+                '.brand span{color:rgba(255,255,255,.92)!important}' +
+                '.x{background:rgba(255,255,255,.18)!important}' +
+                '.x:hover{background:rgba(255,255,255,.32)!important}';
+              rt.appendChild(vStyle);
+            }
+          }
+          // Surf-only: replace destination input with region + spot dropdowns
+          if (v !== 'surf') return;
+          var destEl = rt.getElementById('impt-dest');
+          if (!destEl) return;
+          var wrap = destEl.parentNode;
+          wrap.innerHTML =
+            '<label>Region</label>'+
+            '<select id="impt-region" style="margin-bottom:8px">'+
+              '<option value="">All regions</option>'+
+              '<option value="Asia">Asia</option>'+
+              '<option value="Europe">Europe</option>'+
+              '<option value="Americas">Americas</option>'+
+              '<option value="Africa">Africa</option>'+
+              '<option value="Pacific">Pacific</option>'+
+            '</select>'+
+            '<label>Surf Spot</label>'+
+            '<select id="impt-dest">'+buildSurfOpts('')+'</select>';
+          var h4 = rt.querySelector('.hd h4');
+          if (h4) h4.textContent = 'Find hotels near surf spots';
+          var hdp = rt.querySelector('.hd p');
+          if (hdp) hdp.textContent = '161 surf destinations · 5% back · 1t CO₂ offset';
+          var btn = rt.getElementById('impt-go');
+          if (btn) btn.textContent = 'Find surf hotels →';
+          var ft = rt.querySelector('.ft');
+          if (ft) ft.textContent = 'Powered by IMPT — 161 surf destinations worldwide';
+          rt.getElementById('impt-region').addEventListener('change', function() {
+            rt.getElementById('impt-dest').innerHTML = buildSurfOpts(this.value);
+          });
+        })
+        .catch(function(){});
+    } catch(e) {}
+  }
   var ICON = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#C8FF7E" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 18v-6a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v6"/><path d="M3 18h18"/><path d="M6 10V7a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v3"/></svg>';
 
   var CSS = '\
@@ -127,6 +340,7 @@
       rt.innerHTML = panelHTML(false);
       wire(rt, false, null);
       loadBrand(rt);
+      loadSurf(rt);
       track('view');
     } else {
       var host = document.createElement('div');
@@ -137,6 +351,7 @@
       rt2.appendChild(wrap);
       wire(rt2, true, wrap);
       loadBrand(rt2);
+      loadSurf(rt2);
       function flip(left){ wrap.classList.toggle('left', left); try{ host.setAttribute('data-impt-side', left?'left':'right'); }catch(_){ } }
       function place(){
         try{

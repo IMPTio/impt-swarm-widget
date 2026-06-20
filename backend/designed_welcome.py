@@ -103,14 +103,16 @@ def build_designed(vertical, name, h1, body_html, cta_text, cta_url):
   </td></tr>
 </table></td></tr></table></body></html>"""
 
-def build_welcome(name, key, vertical=None):
+def build_welcome(name, key, vertical=None, api_token=None):
     v=(vertical or "").strip().lower()
     c=V.get(v, V["hotels"]); vk=v if v in V else "hotels"
     install_url=f"https://swarm.impt.io/widget-install?{'v='+vk+'&' if vk!='hotels' else ''}k={key}"
     share_url=f"https://swarm.impt.io/go?k={key}"
+    dash_url=f"https://swarm.impt.io/dashboard?k={key}&t={api_token}" if api_token else None
     snippet_raw=f'<script src="https://swarm.impt.io/{c["script"]}" data-key="{key}" async></script>\n<div id="impt-swarm"></div>'
     snippet_html=_html.escape(snippet_raw).replace("\n","<br>")
     hero=f'{HERO_BASE}/{c["hero"]}'; n=_first(name); subj=c["subject"]
+    dash_block = (f'<p style="margin-top:16px;"><a href="{dash_url}" style="display:inline-block;background:{GREEN};color:#fff;font-weight:700;font-size:15px;text-decoration:none;padding:12px 24px;border-radius:999px;">Open my dashboard →</a></p>') if dash_url else ""
     html=f"""<!DOCTYPE html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head>
 <body style="margin:0;padding:0;background:#ffffff;">
 <div style="display:none;max-height:0;overflow:hidden;opacity:0;">Your IMPT {c['sfx']} widget is live — earn 5% on every booking.</div>
@@ -131,6 +133,7 @@ def build_welcome(name, key, vertical=None):
      <p style="font-size:16px;line-height:1.6;margin:0 0 12px;color:{INK};"><b>Paste this one line before &lt;/body&gt;</b> — your booking widget then appears on every page.</p>
      <div style="background:{INK};color:{CREAM};font-family:Consolas,Menlo,monospace;font-size:13px;line-height:1.6;padding:18px 20px;border-radius:12px;margin:0 0 22px;word-break:break-all;">{snippet_html}</div>
      <a href="{install_url}" style="display:inline-block;background:{ORANGE};color:#fff;font-weight:700;font-size:16px;text-decoration:none;padding:15px 28px;border-radius:999px;">Get my widget code →</a>
+     {dash_block}
      <p style="font-size:13px;color:{MUTE};letter-spacing:.06em;margin:26px 0 6px;">NO WEBSITE? SHARE YOUR PERSONAL LINK</p>
      <div style="display:inline-block;background:rgba(31,111,84,.10);border:1px solid rgba(31,111,84,.28);color:{GREEN};font-family:Consolas,Menlo,monospace;font-size:13px;padding:10px 16px;border-radius:999px;">{share_url}</div>
      <p style="font-size:15px;color:{INK};line-height:1.5;margin:30px 0 0;">Laura<br><span style="color:{MUTE};">IMPT Partner Team</span></p>
@@ -140,5 +143,5 @@ def build_welcome(name, key, vertical=None):
   </td></tr>
 </table></td></tr></table></body></html>"""
     text=(f"{c['h1']}\n\nHi {n}, {c['join']}\n\n- {c['niche']}\n- Same rooms, same prices as the big travel sites.\n- You earn 5% of every booking, paid gross.\n- Every stay funds verified climate action.\n\n"
-          f"Paste this one line before </body>:\n{snippet_raw}\n\nGet your widget code: {install_url}\nNo website? Share your link: {share_url}\n\nLaura — IMPT Partner Team\nYou signed up at {c['signup']}. Reply STOP to unsubscribe.")
+          f"Paste this one line before </body>:\n{snippet_raw}\n\nGet your widget code: {install_url}\nYour dashboard: {dash_url}\nNo website? Share your link: {share_url}\n\nLaura — IMPT Partner Team\nYou signed up at {c['signup']}. Reply STOP to unsubscribe.")
     return subj, html, text

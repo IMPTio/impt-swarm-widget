@@ -150,5 +150,45 @@
   place(); [600,1500,3500,7000].forEach(function(t){ setTimeout(place, t); });
   window.addEventListener('resize', place);
   if(window.MutationObserver){ try{ new MutationObserver(place).observe(document.body,{childList:true,subtree:false}); }catch(e){} }
+  // ── AI Concierge — shown only when THIS key has fuel + chat enabled (Mike 2026-06-26).
+  // Additive: non-fuelled partners never see the button, so existing sites are unchanged.
+  function _twThenChat(cb){
+    function loadChat(){ if(window.IMPTChat){cb();return;}
+      var cs=document.createElement('script'); cs.src='https://swarm.impt.io/assets/chat.js?v=20260625e';
+      cs.onload=function(){ if(window.IMPTChat) cb(); }; document.head.appendChild(cs); }
+    if(window.tailwind||document.querySelector('script[src*="cdn.tailwindcss.com"]')){ loadChat(); return; }
+    var tw=document.createElement('script'); tw.src='https://cdn.tailwindcss.com?plugins=typography,line-clamp';
+    tw.onload=function(){ try{ if(window.tailwind&&window.tailwind.config){ window.tailwind.config={theme:{extend:{colors:{'impt-green':'#0a8f5b','impt-dark':'#1C3829','impt-cream':'#F4F1EA','impt-accent':'#E8A838'}}}}; } }catch(_){ } loadChat(); };
+    document.head.appendChild(tw);
+  }
+  function _openChat(){
+    var ex=document.getElementById('impt-ai-chat'); if(ex){ ex.style.display='block'; return; }
+    try{ wrap.classList.remove('open'); }catch(_){}
+    _twThenChat(function(){
+      var box=document.createElement('div'); box.id='impt-ai-chat';
+      box.style.cssText='position:fixed;right:20px;bottom:20px;width:392px;max-width:calc(100vw - 24px);height:560px;max-height:calc(100vh - 40px);z-index:2147483600;background:#fff;border-radius:18px;box-shadow:0 28px 64px -16px rgba(8,42,58,.5);overflow:hidden';
+      var inner=document.createElement('div'); inner.style.cssText='height:100%'; box.appendChild(inner);
+      var cls=document.createElement('button'); cls.innerHTML='&times;'; cls.title='Close';
+      cls.style.cssText='position:absolute;top:10px;right:12px;z-index:5;width:28px;height:28px;border:0;border-radius:50%;background:rgba(0,0,0,.2);color:#fff;font-size:18px;line-height:1;cursor:pointer';
+      cls.addEventListener('click',function(){ try{ box.parentNode.removeChild(box); }catch(_){ } });
+      box.appendChild(cls); document.body.appendChild(box);
+      try{ window.IMPTChat.mount({ root:inner, variant:'embedded', partnerKey:KEY, greetingText:window.__imptGreeting||'', chatPlaceholder:window.__imptPlaceholder||'', hidePoweredBy:!!window.__imptHidePowered, primaryColor:window.__imptPrimaryColor||'' }); }catch(_){ }
+    });
+  }
+  function _addConcierge(){
+    var bd=root.querySelector('.bd'); if(!bd||root.getElementById('impt-ai')) return;
+    var b=document.createElement('button'); b.id='impt-ai'; b.type='button'; b.textContent='\U0001F916 Ask our AI Concierge';
+    b.setAttribute('style','height:46px;width:100%;border:1.5px solid rgba(11,74,64,.35);border-radius:12px;background:transparent;color:#0b4a40;font-size:13.5px;font-weight:700;cursor:pointer;margin-top:2px;transition:background .15s,border-color .15s');
+    b.addEventListener('mouseover',function(){ this.style.background='rgba(11,74,64,.06)'; this.style.borderColor='rgba(11,74,64,.7)'; });
+    b.addEventListener('mouseout',function(){ this.style.background='transparent'; this.style.borderColor='rgba(11,74,64,.35)'; });
+    b.addEventListener('click',_openChat); bd.appendChild(b);
+  }
+  try{
+    fetch('https://swarm.impt.io/api/widget/fuel?key='+encodeURIComponent(KEY))
+      .then(function(r){ return r.ok?r.json():null; })
+      .then(function(f){ if(f&&f.features&&f.features.chat_enabled&&f.balance>0) _addConcierge(); })
+      .catch(function(){});
+  }catch(e){}
+
   track('load');
 })();

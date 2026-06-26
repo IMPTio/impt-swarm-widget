@@ -53,7 +53,7 @@ STAYS_BASE = "https://swarm.impt.io/stays"
 # swarm.impt.io/stays/<v>/. scuba/lgbtq/clubs/brands/widget(generic) used to fall
 # back to /worlds or the bare receipt — now every widget lands on its own page.
 STAYS_VERTICALS = {"surf", "walks", "mtb", "ski", "pets", "golf", "yoga",
-                   "widget", "lgbtq", "scuba", "clubs", "brands"}
+                   "widget", "lgbtq", "scuba", "clubs", "brands", "carbon"}
 VERTICAL_LANDERS = {
     # All vertical landing pages intentionally omitted — partners go straight to hotel search
     # (landing pages are for marketing/discovery; widget card shows on direct visit with key)
@@ -150,6 +150,14 @@ def init_db():
             ]:
                 if col not in cols:
                     c.execute(ddl)
+        # Migrate partner_fuel — add plan column
+        fuel_cols = {r[1] for r in c.execute("PRAGMA table_info(partner_fuel)").fetchall()}
+        if "plan" not in fuel_cols:
+            c.execute("ALTER TABLE partner_fuel ADD COLUMN plan TEXT DEFAULT NULL")
+        # Migrate partner_features — add priority_support column
+        feat_cols = {r[1] for r in c.execute("PRAGMA table_info(partner_features)").fetchall()}
+        if "priority_support" not in feat_cols:
+            c.execute("ALTER TABLE partner_features ADD COLUMN priority_support INTEGER DEFAULT 0")
         c.executescript("""
         CREATE TABLE IF NOT EXISTS partners (
           id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -212,7 +220,60 @@ def init_db():
           ip_hash TEXT
         );
         CREATE INDEX IF NOT EXISTS idx_audit_subject ON audit_log(subject);
+        CREATE TABLE IF NOT EXISTS partner_fuel (
+          key             TEXT PRIMARY KEY,
+          balance         INTEGER NOT NULL DEFAULT 0,
+          total_purchased INTEGER NOT NULL DEFAULT 0,
+          updated_at      INTEGER
+        );
+        CREATE TABLE IF NOT EXISTS fuel_transactions (
+          id         INTEGER PRIMARY KEY AUTOINCREMENT,
+          key        TEXT NOT NULL,
+          amount     INTEGER NOT NULL,
+          reason     TEXT,
+          ref        TEXT,
+          created_at INTEGER NOT NULL
+        );
+        CREATE INDEX IF NOT EXISTS idx_fuel_tx_key ON fuel_transactions(key);
+        CREATE TABLE IF NOT EXISTS partner_features (
+          key               TEXT PRIMARY KEY,
+          chat_enabled      INTEGER DEFAULT 0,
+          branding_unlocked INTEGER DEFAULT 0,
+          hosted_page       INTEGER DEFAULT 0,
+          date_picker       INTEGER DEFAULT 0,
+          full_search       INTEGER DEFAULT 0,
+          analytics         INTEGER DEFAULT 0,
+          whitelabel        INTEGER DEFAULT 0,
+          updated_at        INTEGER
+        );
+        CREATE TABLE IF NOT EXISTS partner_brand (
+          key TEXT PRIMARY KEY,
+          name TEXT,
+          logo_url TEXT,
+          primary_color TEXT,
+          greeting_text TEXT,
+          chat_placeholder TEXT,
+          button_text TEXT,
+          button_emoji TEXT,
+          hide_powered_by INTEGER DEFAULT 0,
+          updated_at INTEGER
+        );
         """)
+    # Migrate partner_brand columns (idempotent)
+    for col, typedef in [
+        ("logo_url", "TEXT"),
+        ("primary_color", "TEXT"),
+        ("greeting_text", "TEXT"),
+        ("chat_placeholder", "TEXT"),
+        ("button_text", "TEXT"),
+        ("button_emoji", "TEXT"),
+        ("hide_powered_by", "INTEGER DEFAULT 0"),
+    ]:
+        try:
+            with db() as c:
+                c.execute(f"ALTER TABLE partner_brand ADD COLUMN {col} {typedef}")
+        except Exception:
+            pass
 
 
 def hash_ip(ip: str) -> str:
@@ -547,7 +608,7 @@ class SignupReq(BaseModel):
     payout_method: str = Field(..., pattern="^(bank-transfer|paypal|stripe|revolut)$")
     payout_target: str = Field(..., min_length=2, max_length=200)
     hp: Optional[str] = Field(None, max_length=200)  # honeypot — must be empty/None
-    vertical: Optional[str] = Field(None, pattern="^(widget|mtb|surf|golf|lgbtq|walks|scuba|clubs|brands|yoga|ski|pets)$")  # which widget they're downloading (2026-06-12; golf 2026-06-13; yoga/ski/pets 2026-06-14)
+    vertical: Optional[str] = Field(None, pattern="^(widget|mtb|surf|golf|lgbtq|walks|scuba|clubs|brands|yoga|ski|pets|carbon)$")  # which widget they're downloading (2026-06-12; golf 2026-06-13; yoga/ski/pets 2026-06-14)
 
 
 class BookingHookBody(BaseModel):
@@ -731,7 +792,7 @@ a{{color:#08423a}}</style></head><body>
 # Mint an ACTIVE key in ONE click — no email/payout gate. Earnings accrue from
 # click one; email + payout are collected later (optional capture on the result
 # page / at withdrawal). Legacy /partners/signup + /verify are untouched.
-VALID_VERTICALS = {"widget", "mtb", "surf", "golf", "lgbtq", "walks", "scuba", "clubs", "brands", "yoga", "ski", "pets"}
+VALID_VERTICALS = {"widget", "mtb", "surf", "golf", "lgbtq", "walks", "scuba", "clubs", "brands", "yoga", "ski", "pets", "carbon"}
 
 
 def _mint_active_key(vertical: str, ip_h: str, source: str = "oneclick"):
@@ -804,7 +865,7 @@ def quickstart(body: QuickStartReq, request: Request):
 class AttachEmailReq(BaseModel):
     key: str = Field(..., min_length=4, max_length=64)
     email: EmailStr
-    vertical: Optional[str] = Field(None, pattern="^(widget|mtb|surf|golf|lgbtq|walks|scuba|clubs|brands|yoga|ski|pets)$")
+    vertical: Optional[str] = Field(None, pattern="^(widget|mtb|surf|golf|lgbtq|walks|scuba|clubs|brands|yoga|ski|pets|carbon)$")
 
 
 @app.post("/api/widget/attach-email")
@@ -980,8 +1041,11 @@ ALLOWED_REDIRECT_HOSTS = {"app.impt.io", "impt.io", "www.impt.io", "shop.impt.io
 def redirect(request: Request, key: str = Query(..., min_length=4, max_length=64),
              dest: Optional[str] = None, checkIn: Optional[str] = None, checkOut: Optional[str] = None,
              adults: Optional[str] = None, rooms: Optional[str] = None,
-             to: Optional[str] = None, med: Optional[str] = None):
-    from urllib.parse import quote, urlparse
+             to: Optional[str] = None, med: Optional[str] = None,
+             hotelId: Optional[str] = None, sessionId: Optional[str] = None,
+             tl: Optional[str] = None, gl: Optional[str] = None,
+             locationName: Optional[str] = None, childAges: Optional[str] = None):
+    from urllib.parse import quote, urlparse, urlencode
     ip_h = hash_ip(request.client.host if request.client else "")
     with db() as c:
         partner = c.execute("SELECT status, vertical FROM partners WHERE key=?", (key,)).fetchone()
@@ -989,7 +1053,7 @@ def redirect(request: Request, key: str = Query(..., min_length=4, max_length=64
         c.execute(
             "INSERT INTO partner_events(key,evt,dest,ref,ip_hash,ua_hash,ts) VALUES (?,?,?,?,?,?,?)",
             (key, "click" if (partner and partner["status"] == "active") else "click_inactive",
-             dest, request.headers.get("referer", ""), ip_h,
+             dest or locationName, request.headers.get("referer", ""), ip_h,
              hash_ua(request.headers.get("user-agent", "")), int(time.time()))
         )
 
@@ -999,9 +1063,17 @@ def redirect(request: Request, key: str = Query(..., min_length=4, max_length=64
     # we set up — it must NEVER fall back to the main hotel search. So a vertical partner lands on
     # its own vertical page in every case (typed search included); the typed query rides along so
     # the vertical page can use it. Only generic ("widget") partners use the main search lander.
-    if not to and partner:
+    if hotelId:
+        _dqs = {k: v for k, v in {
+            "step": "detail", "hotelId": hotelId, "sessionId": sessionId or "",
+            "tl": tl or "", "gl": gl or "", "locationName": locationName or "",
+            "checkIn": checkIn or "", "checkOut": checkOut or "",
+            "adults": adults or "", "rooms": rooms or "", "childAges": childAges or "",
+        }.items() if v}
+        base = f"https://app.impt.io/find-hotel-input?{urlencode(_dqs)}"
+    elif not to and partner:
         base = VERTICAL_LANDERS.get((partner["vertical"] or "").strip().lower(), LANDER)
-    if to:
+    elif to:
         try:
             u = urlparse(to)
             if u.scheme == "https" and u.netloc.lower() in ALLOWED_REDIRECT_HOSTS:
@@ -1016,15 +1088,18 @@ def redirect(request: Request, key: str = Query(..., min_length=4, max_length=64
         qs = [f"utm_source=swarm-{quote(key)}", f"utm_medium={medium}", "utm_campaign=oss"]
         set_cookie = True
     # If key inactive/unknown: redirect anyway (graceful UX) but no commission attribution.
-    if dest:
+    if hotelId:
+        pass  # hotel detail URL already has all params
+    elif dest:
         qs.append("destination=" + quote(dest))
         qs.append("locationName=" + quote(dest))
     # Forward the search the guest actually made (dates/guests) so they land on results.
-    for pname, pval in (("checkIn", checkIn), ("checkOut", checkOut), ("adults", adults), ("rooms", rooms)):
-        if pval:
-            qs.append(f"{pname}=" + quote(str(pval)))
-    qs.append("step=results")
-    qs.append("childAges=")
+    if not hotelId:
+        for pname, pval in (("checkIn", checkIn), ("checkOut", checkOut), ("adults", adults), ("rooms", rooms)):
+            if pval:
+                qs.append(f"{pname}=" + quote(str(pval)))
+        qs.append("step=results")
+        qs.append("childAges=")
     sep = "&" if "?" in base else "?"
     target = base + (sep + "&".join(qs) if qs else "")
     resp = RedirectResponse(url=target, status_code=302)
@@ -1062,23 +1137,24 @@ def track(request: Request, key: str = Query(..., max_length=64), evt: str = Que
 
 @app.get("/api/widget/brand")
 def brand(key: str = Query(..., max_length=64)):
-    """Public: partner display name (+ logo/color if set) for personalising the widget."""
-    name = ""; logo = ""; color = ""
+    """Public: partner display name + all brand customisation fields for the widget."""
+    name = ""; logo = ""; color = ""; greeting_text = ""; chat_placeholder = ""; button_text = ""; button_emoji = ""; hide_powered_by = False
     with db() as c:
         try:
             r = c.execute("SELECT name FROM partners WHERE key=?", (key,)).fetchone()
-            if r and r[0]:
-                name = r[0]
-        except Exception:
-            pass
+            if r and r[0]: name = r[0]
+        except Exception: pass
         try:
-            b = c.execute("SELECT name,logo_url,color FROM partner_brand WHERE key=?", (key,)).fetchone()
+            b = c.execute("SELECT name,logo_url,primary_color,greeting_text,chat_placeholder,button_text,button_emoji,hide_powered_by FROM partner_brand WHERE key=?", (key,)).fetchone()
             if b:
                 name = b[0] or name; logo = b[1] or ""; color = b[2] or ""
-        except Exception:
-            pass
-    return JSONResponse({"name": name, "logo": logo, "color": color},
-                        headers={"Access-Control-Allow-Origin": "*", "Cache-Control": "public, max-age=300"})
+                greeting_text = b[3] or ""; chat_placeholder = b[4] or ""
+                button_text = b[5] or ""; button_emoji = b[6] or ""; hide_powered_by = bool(b[7])
+        except Exception: pass
+    return JSONResponse({"name": name, "logo": logo, "color": color,
+                         "greetingText": greeting_text, "chatPlaceholder": chat_placeholder,
+                         "buttonText": button_text, "buttonEmoji": button_emoji, "hidePoweredBy": hide_powered_by},
+                        headers={"Access-Control-Allow-Origin": "*", "Cache-Control": "no-store"})
 
 
 
@@ -1116,6 +1192,52 @@ def set_name(p: _SetName):
                   "ON CONFLICT(key) DO UPDATE SET name=excluded.name, updated_at=excluded.updated_at",
                   (p.key, nm, int(time.time())))
     return JSONResponse({"ok": True, "name": nm}, headers={"Access-Control-Allow-Origin": "*"})
+
+
+class _BrandSave(BaseModel):
+    key: str = Field(..., max_length=64)
+    token: str = Field(..., max_length=128)
+    name: str = Field("", max_length=60)
+    logo_url: str = Field("", max_length=512)
+    primary_color: str = Field("", max_length=20)
+    greeting_text: str = Field("", max_length=300)
+    chat_placeholder: str = Field("", max_length=100)
+    button_text: str = Field("", max_length=40)
+    button_emoji: str = Field("", max_length=8)
+    hide_powered_by: bool = Field(False)
+
+@app.post("/api/widget/brand/save")
+def brand_save(p: _BrandSave):
+    """Save all partner brand/customization settings."""
+    import re as _re
+    nm = (p.name or "").strip()[:40]
+    logo = (p.logo_url or "").strip()[:400]
+    color = (p.primary_color or "").strip()[:20]
+    if color and not _re.match(r'^#[0-9a-fA-F]{3,8}$', color):
+        color = ""
+    greeting = (p.greeting_text or "").strip()[:280]
+    placeholder = (p.chat_placeholder or "").strip()[:80]
+    btxt = (p.button_text or "").strip()[:30]
+    bemoji = (p.button_emoji or "").strip()[:4]
+    hide_pb = bool(p.hide_powered_by)
+    # Gate logo and whitelabel (hide powered by) behind Pro plan
+    features = _features_get(p.key)
+    if not features.get("branding_unlocked"):
+        logo = ""
+        hide_pb = False
+    with db() as c:
+        r = c.execute("SELECT api_token FROM partners WHERE key=?", (p.key,)).fetchone()
+        if not r or r[0] != p.token:
+            raise HTTPException(403, "bad key/token")
+        c.execute("""INSERT INTO partner_brand(key,name,logo_url,primary_color,greeting_text,chat_placeholder,button_text,button_emoji,hide_powered_by,updated_at)
+            VALUES(?,?,?,?,?,?,?,?,?,?)
+            ON CONFLICT(key) DO UPDATE SET
+              name=excluded.name, logo_url=excluded.logo_url, primary_color=excluded.primary_color,
+              greeting_text=excluded.greeting_text, chat_placeholder=excluded.chat_placeholder,
+              button_text=excluded.button_text, button_emoji=excluded.button_emoji, hide_powered_by=excluded.hide_powered_by,
+              updated_at=excluded.updated_at""",
+            (p.key, nm, logo, color, greeting, placeholder, btxt, bemoji, int(hide_pb), int(time.time())))
+    return JSONResponse({"ok": True}, headers={"Access-Control-Allow-Origin": "*"})
 
 
 @app.post("/api/widget/booking")
@@ -1207,6 +1329,24 @@ def me(authorization: str = Header(...)):
         "clicks_30d": clicks_30d,
         "bookings": [dict(b) for b in bookings],
     }
+
+
+
+@app.get("/api/widget/partners/siblings")
+def get_siblings(authorization: str = Header(...)):
+    """Return all active partner keys sharing the same email as the authenticated token."""
+    if not authorization.lower().startswith("bearer "):
+        raise HTTPException(401, "missing bearer")
+    token = authorization.split(" ", 1)[1].strip()
+    with db() as c:
+        partner = c.execute("SELECT email FROM partners WHERE api_token=?", (token,)).fetchone()
+        if not partner:
+            raise HTTPException(401, "bad token")
+        rows = c.execute(
+            "SELECT key, vertical, name, api_token FROM partners WHERE email=? AND status='active' ORDER BY created_at",
+            (partner["email"],)
+        ).fetchall()
+    return {"siblings": [dict(r) for r in rows]}
 
 
 def _login_rate_ok(ip_h: str) -> bool:
@@ -2832,6 +2972,306 @@ def laura_health():
         "last_poll_unix": st.get("last_poll_unix"),
         "inbox_since_unix": st.get("since_unix"),
     }
+
+
+
+
+# -- Carbon Fuel Webhook (2026-06-24) --------------------------------------------
+# Henry fires this from app.impt.io after a confirmed payment.
+# Auth: X-IMPT-Signature: sha256=<hmac-hex>  (same pattern as booking webhook)
+# Secret env var: SWARM_CARBON_WEBHOOK_SECRET
+#
+# Expected payload:
+#   {
+#     "partner_key": "demo-carbon",   -- or email if key unknown
+#     "package":     "starter",       -- starter | pro | growth
+#     "ref":         "pi_xxx",        -- Stripe payment_intent or tx hash
+#     "amount_usd":  5.00             -- optional, for audit log
+#   }
+
+CARBON_WEBHOOK_SECRET = os.environ.get("SWARM_CARBON_WEBHOOK_SECRET", "set-me-in-env")
+
+
+@app.post("/api/webhook")
+@app.post("/api/widget/webhook")
+async def carbon_fuel_webhook(request: Request):
+    import time as _time
+    raw = await request.body()
+    if len(raw) > 8192:
+        raise HTTPException(413, "body too large")
+
+    # Verify HMAC signature
+    sig_header = request.headers.get("X-IMPT-Signature", "")
+    auth_ok = False
+    if sig_header:
+        try:
+            algo, hexsig = sig_header.split("=", 1)
+        except ValueError:
+            raise HTTPException(400, "bad signature header")
+        if algo.lower() != "sha256":
+            raise HTTPException(400, "unsupported sig algo")
+        expected = hmac.new(CARBON_WEBHOOK_SECRET.encode(), raw, hashlib.sha256).hexdigest()
+        if hmac.compare_digest(expected, hexsig.lower()):
+            auth_ok = True
+
+    if not auth_ok:
+        audit("carbon_webhook.bad_auth", subject=None, detail=str(sig_header)[:64],
+              ip_hash=hash_ip(request.client.host if request.client else ""))
+        raise HTTPException(401, "bad signature")
+
+    try:
+        body = json.loads(raw)
+    except Exception:
+        raise HTTPException(400, "bad json body")
+
+    partner_key = (body.get("partner_key") or "").strip()
+    package     = (body.get("package") or "").strip().lower()
+    ref         = (body.get("ref") or "")[:128]
+    amount_usd  = body.get("amount_usd")
+
+    if not partner_key:
+        raise HTTPException(400, "missing partner_key")
+    if package not in CARBON_PRICES:
+        raise HTTPException(400, "unknown package — valid: " + str(list(CARBON_PRICES)))
+
+    # Resolve key — Henry may send email instead of key
+    with db() as c:
+        row = c.execute(
+            "SELECT key FROM partners WHERE key=? OR email=? LIMIT 1",
+            (partner_key, partner_key)
+        ).fetchone()
+    if not row:
+        raise HTTPException(404, "unknown partner_key/email")
+
+    resolved_key = row[0]
+    carbon_amount = CARBON_PRICES[package]["carbon"]
+
+    # Guard against duplicate refs
+    with db() as c:
+        dup = c.execute(
+            "SELECT id FROM fuel_transactions WHERE ref=? AND ref != '' LIMIT 1",
+            (ref,)
+        ).fetchone()
+        if dup:
+            return JSONResponse({"ok": True, "duplicate": True, "key": resolved_key})
+
+    _fuel_credit(resolved_key, carbon_amount, "carbon_topup_" + package, ref=ref)
+    _plan_unlock_features(resolved_key, package)
+
+    audit("carbon_webhook.credited", subject=resolved_key,
+          detail=f"package={package} carbon={carbon_amount} ref={ref} usd={amount_usd}",
+          ip_hash=hash_ip(request.client.host if request.client else ""))
+
+    notify_team("carbon_topup", {
+        "key": resolved_key,
+        "package": package,
+        "carbon": carbon_amount,
+        "ref": ref,
+        "usd": amount_usd,
+    })
+
+    return JSONResponse({"ok": True, "key": resolved_key, "package": package, "carbon_credited": carbon_amount})
+
+
+# -- Carbon Fuel API (2026-06-24) ------------------------------------------------
+CARBON_PRICES = {
+    "starter": {"usd_cents": 500,  "carbon": 500},
+    "pro":     {"usd_cents": 1500, "carbon": 1500},
+    "growth":  {"usd_cents": 3000, "carbon": 3500},
+}
+
+# Features unlocked by each plan tier (cumulative — higher tiers include lower)
+PLAN_FEATURES = {
+    "starter": ["chat_enabled"],
+    "pro":     ["chat_enabled", "branding_unlocked", "whitelabel"],
+    "growth":  ["chat_enabled", "branding_unlocked", "whitelabel", "priority_support"],
+}
+PLAN_TIER = {"starter": 1, "pro": 2, "growth": 3}
+
+FEATURE_COSTS = {
+    "chat_enabled":      {"type": "balance_gate", "carbon": 50},
+    "branding_unlocked": {"type": "once",    "carbon": 100},
+    "hosted_page":       {"type": "balance_gate", "carbon": 50},
+    "date_picker":       {"type": "balance_gate", "carbon": 50},
+    "full_search":       {"type": "balance_gate", "carbon": 50},
+    "analytics":         {"type": "balance_gate", "carbon": 100},
+    "whitelabel":        {"type": "balance_gate", "carbon": 200},
+}
+
+
+def _fuel_get(key: str):
+    with db() as c:
+        row = c.execute(
+            "SELECT balance, total_purchased, plan FROM partner_fuel WHERE key=?", (key,)
+        ).fetchone()
+        if not row:
+            return {"balance": 0, "total_purchased": 0, "plan": None}
+        return {"balance": row[0], "total_purchased": row[1], "plan": row[2]}
+
+
+def _features_get(key: str):
+    with db() as c:
+        row = c.execute("SELECT * FROM partner_features WHERE key=?", (key,)).fetchone()
+        if not row:
+            return {f: 0 for f in FEATURE_COSTS}
+        cols = [d[1] for d in c.execute("PRAGMA table_info(partner_features)").fetchall()]
+        d = dict(zip(cols, row))
+        d.pop("key", None)
+        d.pop("updated_at", None)
+        return d
+
+
+def _fuel_credit(key: str, amount: int, reason: str, ref: str = None):
+    import time
+    now = int(time.time())
+    with db() as c:
+        c.execute(
+            "INSERT OR IGNORE INTO partner_fuel(key, balance, total_purchased, updated_at) VALUES(?,0,0,?)",
+            (key, now)
+        )
+        c.execute(
+            "UPDATE partner_fuel SET balance=balance+?, total_purchased=total_purchased+?, updated_at=? WHERE key=?",
+            (amount, amount, now, key)
+        )
+        c.execute(
+            "INSERT INTO fuel_transactions(key, amount, reason, ref, created_at) VALUES(?,?,?,?,?)",
+            (key, amount, reason, ref, now)
+        )
+
+
+def _plan_unlock_features(key: str, plan: str):
+    """Auto-unlock all features granted by a plan tier. Never downgrades."""
+    import time as _t
+    features = PLAN_FEATURES.get(plan, [])
+    if not features:
+        return
+    now = int(_t.time())
+    with db() as c:
+        c.execute(
+            "INSERT OR IGNORE INTO partner_features(key, updated_at) VALUES(?,?)",
+            (key, now)
+        )
+        set_clauses = ", ".join(f + "=1" for f in features)
+        c.execute(
+            "UPDATE partner_features SET " + set_clauses + ", updated_at=? WHERE key=?",
+            (now, key)
+        )
+        # Record plan — only upgrade, never downgrade
+        c.execute(
+            "INSERT OR IGNORE INTO partner_fuel(key, balance, total_purchased, updated_at) VALUES(?,0,0,?)",
+            (key, now)
+        )
+        cur = c.execute("SELECT plan FROM partner_fuel WHERE key=?", (key,)).fetchone()
+        cur_tier = PLAN_TIER.get(cur[0] or "", 0) if cur else 0
+        if PLAN_TIER.get(plan, 0) > cur_tier:
+            c.execute("UPDATE partner_fuel SET plan=?, updated_at=? WHERE key=?", (plan, now, key))
+
+
+def _fuel_debit(key: str, amount: int, reason: str, ref: str = None) -> bool:
+    import time
+    now = int(time.time())
+    with db() as c:
+        row = c.execute("SELECT balance FROM partner_fuel WHERE key=?", (key,)).fetchone()
+        if not row or row[0] < amount:
+            return False
+        c.execute(
+            "UPDATE partner_fuel SET balance=balance-?, updated_at=? WHERE key=?",
+            (amount, now, key)
+        )
+        c.execute(
+            "INSERT INTO fuel_transactions(key, amount, reason, ref, created_at) VALUES(?,?,?,?,?)",
+            (key, -amount, reason, ref, now)
+        )
+        return True
+
+
+@app.get("/api/widget/plans")
+def carbon_plans():
+    return {
+        "plans": [
+            {"id": "starter", "name": "Starter", "usd": CARBON_PRICES["starter"]["usd_cents"] / 100, "carbon": CARBON_PRICES["starter"]["carbon"], "description": "Get started with AI-powered hotel search for your audience."},
+            {"id": "pro",     "name": "Pro",     "usd": CARBON_PRICES["pro"]["usd_cents"]     / 100, "carbon": CARBON_PRICES["pro"]["carbon"],     "description": "More fuel for growing partners and active communities."},
+            {"id": "growth",  "name": "Growth",  "usd": CARBON_PRICES["growth"]["usd_cents"]  / 100, "carbon": CARBON_PRICES["growth"]["carbon"],  "description": "Built for high-traffic sites and serious volume."},
+        ],
+        "currency": "USD",
+    }
+
+
+@app.get("/api/widget/fuel")
+def fuel_status(key: str):
+    with db() as c:
+        partner = c.execute("SELECT key FROM partners WHERE key=?", (key,)).fetchone()
+    if not partner:
+        raise HTTPException(404, "unknown key")
+    fuel = _fuel_get(key)
+    features = _features_get(key)
+    return {
+        "key": key,
+        "balance": fuel["balance"],
+        "total_purchased": fuel["total_purchased"],
+        "plan": fuel.get("plan"),
+        "features": features,
+        "prices": CARBON_PRICES,
+        "feature_costs": FEATURE_COSTS,
+    }
+
+
+@app.get("/api/widget/fuel/history")
+def fuel_history(key: str, token: str):
+    with db() as c:
+        partner = c.execute(
+            "SELECT key FROM partners WHERE key=? AND api_token=?", (key, token)
+        ).fetchone()
+        if not partner:
+            raise HTTPException(403, "invalid token")
+        rows = c.execute(
+            "SELECT amount, reason, ref, created_at FROM fuel_transactions "
+            "WHERE key=? ORDER BY created_at DESC LIMIT 50",
+            (key,)
+        ).fetchall()
+    return {"key": key, "transactions": [
+        {"amount": r[0], "reason": r[1], "ref": r[2], "created_at": r[3]} for r in rows
+    ]}
+
+
+@app.post("/api/widget/fuel/topup")
+def fuel_topup_test(key: str, token: str, amount: int = 500, reason: str = "test_topup"):
+    """Dev/test endpoint - manually credit Carbon. Remove before prod."""
+    with db() as c:
+        partner = c.execute(
+            "SELECT key FROM partners WHERE key=? AND api_token=?", (key, token)
+        ).fetchone()
+        if not partner:
+            raise HTTPException(403, "invalid token")
+    _fuel_credit(key, amount, reason, ref="manual-test")
+    return {"ok": True, "credited": amount, **_fuel_get(key)}
+
+
+@app.post("/api/widget/fuel/unlock")
+def fuel_unlock(key: str, token: str, feature: str):
+    import time
+    if feature not in FEATURE_COSTS:
+        raise HTTPException(400, "unknown feature — valid: " + str(list(FEATURE_COSTS)))
+    with db() as c:
+        partner = c.execute(
+            "SELECT key FROM partners WHERE key=? AND api_token=?", (key, token)
+        ).fetchone()
+        if not partner:
+            raise HTTPException(403, "invalid token")
+    cost = FEATURE_COSTS[feature]["carbon"]
+    ok = _fuel_debit(key, cost, "unlock_" + feature)
+    if not ok:
+        fuel = _fuel_get(key)
+        raise HTTPException(402, "insufficient Carbon — need " + str(cost) + ", have " + str(fuel["balance"]))
+    now = int(time.time())
+    with db() as c:
+        c.execute(
+            "INSERT OR IGNORE INTO partner_features(key, updated_at) VALUES(?,?)", (key, now)
+        )
+        c.execute(
+            "UPDATE partner_features SET " + feature + "=1, updated_at=? WHERE key=?", (now, key)
+        )
+    return {"ok": True, "feature": feature, "unlocked": True, **_fuel_get(key)}
 
 
 init_db()

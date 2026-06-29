@@ -177,7 +177,7 @@
   }
   function _addConcierge(){
     var bd=root.querySelector('.bd'); if(!bd||root.getElementById('impt-ai')) return;
-    var b=document.createElement('button'); b.id='impt-ai'; b.type='button'; b.textContent='\U0001F916 Ask our AI Concierge';
+    var b=document.createElement('button'); b.id='impt-ai'; b.type='button'; b.textContent='🤖 Ask our AI Concierge';
     b.setAttribute('style','height:46px;width:100%;border:1.5px solid rgba(11,74,64,.35);border-radius:12px;background:transparent;color:#0b4a40;font-size:13.5px;font-weight:700;cursor:pointer;margin-top:2px;transition:background .15s,border-color .15s');
     b.addEventListener('mouseover',function(){ this.style.background='rgba(11,74,64,.06)'; this.style.borderColor='rgba(11,74,64,.7)'; });
     b.addEventListener('mouseout',function(){ this.style.background='transparent'; this.style.borderColor='rgba(11,74,64,.35)'; });
@@ -189,6 +189,11 @@
       .then(function(f){ if(f&&f.features&&f.features.chat_enabled&&f.balance>0) _addConcierge(); })
       .catch(function(){});
   }catch(e){}
+
+  // Always-on WhatsApp help bubble (Mike 2026-06-28) — single source of truth = wa-bubble.js.
+  try{ if(!window.__imptWaBubble && !document.getElementById('impt-wa-bubble') && !document.querySelector('script[src*="wa-bubble.js"]')){
+    var _s=document.createElement('script'); _s.src='https://swarm.impt.io/wa-bubble.js'; _s.async=true; document.head.appendChild(_s);
+  } }catch(e){}
 
   track('load');
 })();

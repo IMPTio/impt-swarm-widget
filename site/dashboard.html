@@ -2,113 +2,378 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Your IMPT Partner Dashboard</title>
-<meta name="description" content="Your IMPT partner widget — live earnings, climate impact and share tools.">
-<meta property="og:type" content="website">
-<meta property="og:site_name" content="IMPT">
-<meta property="og:title" content="Your IMPT Partner Dashboard">
-<meta property="og:description" content="8M+ hotels worldwide. Every stay offsets 1 tonne of CO₂. Hotels that pay you back.">
-<meta property="og:image" content="https://swarm.impt.io/assets/og.jpg">
-<meta name="twitter:card" content="summary_large_image">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>IMPT Partner Dashboard</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="/assets/impt-widget-ds.css?v=20260614d">
+<link href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;500;600;700&family=Schibsted+Grotesk:ital,wght@0,400;0,700;0,800;1,400;1,700&family=JetBrains+Mono:wght@500;600&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box;margin:0;padding:0;}
+body{background:#F7F8F5;min-height:100vh;padding:32px 16px 56px;font-family:'Hanken Grotesk',system-ui,sans-serif;color:#33453D;}
+@keyframes pulseDot{0%,100%{opacity:1}50%{opacity:.35}}
+.hk{font-family:'Hanken Grotesk',system-ui,sans-serif;}
+.sg{font-family:'Schibsted Grotesk',system-ui,sans-serif;}
+  .plan-lock-overlay{position:absolute;inset:0;background:rgba(251,252,250,.88);border-radius:11px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;z-index:10;backdrop-filter:blur(2px);}
+  .plan-lock-overlay .lock-icon{font-size:22px;}
+  .plan-lock-overlay .lock-msg{font-size:12px;font-weight:600;color:#33453D;text-align:center;line-height:1.4;}
+  .plan-lock-overlay .lock-cta{margin-top:4px;font-size:11.5px;font-weight:700;color:#0FB57A;cursor:pointer;text-decoration:underline;}
+  .plan-section-wrap{position:relative;}
+  #plan-toast{position:fixed;bottom:28px;left:50%;transform:translateX(-50%) translateY(80px);background:#0A3D2C;color:#fff;font-size:13px;font-weight:600;padding:11px 20px;border-radius:999px;box-shadow:0 8px 24px -6px rgba(0,0,0,.35);z-index:99999;transition:transform .3s cubic-bezier(.34,1.56,.64,1),opacity .3s;opacity:0;pointer-events:none;white-space:nowrap;}
+  #plan-toast.show{transform:translateX(-50%) translateY(0);opacity:1;}
+  #plan-toast.warn{background:#b04632;}
+.mono{font-family:'JetBrains Mono',monospace;}
+input,textarea,select,button{font-family:inherit;}
+input:focus,textarea:focus,select:focus{outline:none;border-color:#0FB57A!important;box-shadow:0 0 0 3px rgba(15,181,122,.12)!important;}
+a{color:inherit;text-decoration:none;}
+</style>
 </head>
-<body data-v="widget">
-<div class="wrap">
+<body>
+<div style="max-width:1100px;margin:0 auto;">
 
   <!-- header -->
-  <header class="top fade">
-    <div class="brandrow">
-      <span class="brand">impt</span>
-      <span class="pill"><span class="dot"><i class="ping"></i><i></i></span><span id="pillLabel">Your widget · Live</span></span>
+  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;flex-wrap:wrap;gap:12px;">
+    <div style="display:flex;align-items:center;gap:13px;">
+      <div style="display:flex;align-items:center;gap:9px;">
+        <div style="width:32px;height:32px;border-radius:9px;background:#0FB57A;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+          <svg width="19" height="19" viewBox="0 0 40 40"><path d="M12 30c0-10 8-18 18-18 0 10-8 18-18 18z" fill="#fff"/><path d="M14 28c4-7 10-10 15-11" stroke="#0FB57A" stroke-width="1.8" stroke-linecap="round" fill="none"/></svg>
+        </div>
+        <span class="sg" style="font-weight:700;font-size:22px;line-height:1;color:#0C1A14;letter-spacing:-.02em;">impt</span>
+      </div>
+      <span style="display:inline-flex;align-items:center;gap:7px;font-size:10.5px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:#088055;background:#D7F2E5;padding:6px 11px;border-radius:999px;" id="pillLabel">
+        <span style="width:6px;height:6px;border-radius:50%;background:#0FB57A;flex-shrink:0;animation:pulseDot 2s ease infinite;"></span>Your global widget · Live
+      </span>
     </div>
-    <h1 class="hi" id="hi">Your Partner Dashboard</h1>
-  </header>
+    <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
+      <div id="hi" class="sg" style="font-weight:600;font-size:18px;color:#0C1A14;letter-spacing:-.02em;">Your Partner Dashboard</div>
+      <div id="header-actions" style="display:none;align-items:center;gap:8px;">
+        <a href="https://mail.google.com/mail/?view=cm&fs=1&to=partners@impt.io&cc=san@impt.io&su=Partner+help+request" target="_blank" rel="noreferrer" style="padding:7px 14px;border-radius:20px;border:1px solid rgba(8,66,58,.25);font-size:13px;font-weight:500;color:#0C1A14;text-decoration:none;background:#fff;">Get help</a>
+        <button onclick="signOut()" style="padding:7px 14px;border-radius:20px;border:none;font-size:13px;font-weight:500;color:#fff;background:#0a8f5b;cursor:pointer;">Sign out</button>
+      </div>
+    </div>
+  </div>
 
+  <!-- login / alert banner -->
   <div id="banner"></div>
 
-  <!-- hero earnings -->
-  <section class="hero fade d1">
-    <div class="img"></div><div class="shade"></div>
-    <div class="in">
-      <div class="cap">Earnings this month</div>
-      <div class="big" id="month">€0.00</div>
-      <div class="sub">5% on every booking, paid in full.</div>
-      <div class="mini">
-        <div class="m"><div class="mk">Pending</div><div class="mv" id="pending">€0.00</div></div>
-        <div class="m"><div class="mk">Paid out</div><div class="mv" id="paid">€0.00</div></div>
-        <div class="m"><div class="mk">Lifetime</div><div class="mv" id="life">€0.00</div></div>
-      </div>
-    </div>
-  </section>
-
-  <!-- climate -->
-  <section class="climate fade d2">
-    <div class="big"><span id="co2">0</span> <span id="co2unit">tonnes</span> of CO₂ offset 🌍</div>
-    <div class="sub" id="climateline">Every stay booked through you offsets 1 tonne of carbon — real impact, on the house.</div>
-  </section>
-
-  <!-- stat row -->
-  <section class="stats fade d2">
-    <div class="card pad"><div class="lbl">Clicks (30d)</div><div class="n" id="clicks">0</div></div>
-    <div class="card pad"><div class="lbl">Bookings</div><div class="n" id="bookings">0</div></div>
-    <div class="card pad"><div class="lbl">Conversion</div><div class="n" id="conv">0%</div></div>
-  </section>
-
-  <!-- payout -->
-  <section class="card pad mt fade d3">
-    <div class="payhead">
-      <div><div class="lbl">Next payout</div><div class="v" id="payv">€0.00 of ~$50</div></div>
-      <div class="pct" id="paypct">0%</div>
-    </div>
-    <div class="bar"><i id="prog" style="width:0%"></i></div>
-    <div class="note" id="payline">Payouts go monthly once you pass $50.</div>
-  </section>
-
-  <!-- bookings -->
-  <section class="card mt fade d3" style="overflow:hidden">
-    <div class="thead"><h2 class="disp" style="font-size:19px;font-weight:600">Recent bookings</h2><span class="muted" style="font-size:12px" id="bkcount">0 total</span></div>
-    <div id="bktable">
-      <div class="empty"><div class="e1">No bookings yet — your first one's coming 🌱</div><div class="note" style="margin-top:6px">Share your link below to start earning 5% on every stay.</div></div>
-    </div>
-  </section>
-
-  <!-- make it yours -->
-  <section class="card pad mt fade d4">
-    <h2 class="disp" style="font-size:19px;font-weight:600">Make it yours 🎨</h2>
-    <p class="muted" style="font-size:14px;margin:6px 0 0">Your brand or name shows up on your widget and emails — your audience trusts it more and books more.</p>
-    <div class="row" style="margin-top:16px">
-      <input class="field" id="bname" placeholder="e.g. Acme Travel Co.">
-      <button class="btn" id="bsave" onclick="saveBrand()">Save</button>
-    </div>
-    <div class="ok" id="bok"></div><div class="err" id="berr"></div>
-    <div class="note" id="bnote" style="display:none">Open your dashboard link from your welcome email to enable editing.</div>
-  </section>
-
-  <!-- share -->
-  <section class="card pad mt fade d5">
-    <h2 class="disp" style="font-size:19px;font-weight:600">Share your link <span id="shareEmoji">🌍</span></h2>
-    <p class="muted" style="font-size:14px;margin:6px 0 0">One link. 8M+ hotels worldwide. Every stay offsets 1 tonne of CO₂.</p>
-    <div class="share-grid">
-      <div>
-        <div class="row">
-          <input class="field" id="url" readonly value="Your link appears once your dashboard loads">
-          <button class="btn" id="copyb" onclick="copyLink()">Copy</button>
+  <!-- earnings hero -->
+  <div style="position:relative;overflow:hidden;background:#0A3D2C;border-radius:20px;padding:26px 28px;margin-bottom:16px;">
+    <div style="position:absolute;right:-60px;top:-80px;width:240px;height:240px;border-radius:50%;background:radial-gradient(circle,rgba(52,211,153,.28),transparent 70%);pointer-events:none;"></div>
+    <div style="position:relative;">
+      <div style="font-size:11px;font-weight:600;letter-spacing:.12em;text-transform:uppercase;color:#A9C4B8;margin-bottom:12px;">Earnings this month</div>
+      <div id="month" class="sg" style="font-weight:700;font-size:54px;line-height:1;color:#fff;letter-spacing:-.02em;">€0.00</div>
+      <div style="font-size:14px;font-weight:400;line-height:1.5;color:#A9C4B8;margin-top:8px;">5% back on every booking · paid in full, every month.</div>
+      <div class="hero-stats" style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:22px;">
+        <div style="background:rgba(255,255,255,.06);border:1px solid #1C5641;border-radius:13px;padding:13px 15px;">
+          <div style="font-size:10px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:#A9C4B8;">Pending</div>
+          <div id="pending" class="sg" style="font-weight:700;font-size:20px;line-height:1;color:#EAF3EE;margin-top:7px;">€0.00</div>
         </div>
-        <div class="chips" id="chips"></div>
-        <a class="siglink" id="sig" target="_blank" rel="noreferrer">Grab your email signature →</a>
-      </div>
-      <div class="qrbox">
-        <div class="b"><img id="qr" alt="Your referral QR code"></div>
-        <div class="c">Scan to share</div>
+        <div style="background:rgba(255,255,255,.06);border:1px solid #1C5641;border-radius:13px;padding:13px 15px;">
+          <div style="font-size:10px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:#A9C4B8;">Paid out</div>
+          <div id="paid" class="sg" style="font-weight:700;font-size:20px;line-height:1;color:#EAF3EE;margin-top:7px;">€0.00</div>
+        </div>
+        <div style="background:rgba(255,255,255,.06);border:1px solid #1C5641;border-radius:13px;padding:13px 15px;">
+          <div style="font-size:10px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:#A9C4B8;">Lifetime</div>
+          <div id="life" class="sg" style="font-weight:700;font-size:20px;line-height:1;color:#EAF3EE;margin-top:7px;">€0.00</div>
+        </div>
       </div>
     </div>
-  </section>
+  </div>
 
-  <div class="foot">IMPT — hotels that pay you back &amp; offset carbon. <span style="opacity:.75">8M+ hotels worldwide · every stay offsets 1 tonne of CO₂.</span></div>
+  <!-- metrics row -->
+  <div class="rg3" style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:16px;">
+    <div style="background:#fff;border:1px solid #E4E8E2;border-left:3px solid #0FB57A;border-radius:14px;box-shadow:0 1px 2px rgba(10,61,44,.04);padding:16px 18px;">
+      <div style="font-size:10.5px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:#5C6B64;">Clicks (30d)</div>
+      <div id="clicks" class="sg" style="font-weight:700;font-size:26px;line-height:1;color:#0C1A14;margin-top:9px;">0</div>
+    </div>
+    <div style="background:#fff;border:1px solid #E4E8E2;border-left:3px solid #0FB57A;border-radius:14px;box-shadow:0 1px 2px rgba(10,61,44,.04);padding:16px 18px;">
+      <div style="font-size:10.5px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:#5C6B64;">Bookings</div>
+      <div id="bookings" class="sg" style="font-weight:700;font-size:26px;line-height:1;color:#0C1A14;margin-top:9px;">0</div>
+    </div>
+    <div style="background:#fff;border:1px solid #E4E8E2;border-left:3px solid #0FB57A;border-radius:14px;box-shadow:0 1px 2px rgba(10,61,44,.04);padding:16px 18px;">
+      <div style="font-size:10.5px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:#5C6B64;">Conversion</div>
+      <div id="conv" class="sg" style="font-weight:700;font-size:26px;line-height:1;color:#0C1A14;margin-top:9px;">0%</div>
+    </div>
+  </div>
+
+  <!-- payout progress + climate impact -->
+  <div class="rg2" style="display:grid;grid-template-columns:1.4fr 1fr;gap:12px;margin-bottom:16px;">
+    <div style="background:#fff;border:1px solid #E4E8E2;border-radius:14px;box-shadow:0 1px 2px rgba(10,61,44,.04);padding:18px 20px;">
+      <div style="display:flex;align-items:center;justify-content:space-between;">
+        <div>
+          <div style="font-size:10.5px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:#5C6B64;">Next payout</div>
+          <div class="sg" style="font-weight:600;font-size:16px;line-height:1;color:#0C1A14;margin-top:8px;"><span id="payv">€0.00</span> <span style="color:#8A968F;font-weight:500;">of ~$50</span></div>
+        </div>
+        <div id="paypct" class="sg" style="font-weight:700;font-size:18px;line-height:1;color:#0C1A14;">0%</div>
+      </div>
+      <div style="height:7px;border-radius:999px;background:#EEF8F2;margin-top:14px;overflow:hidden;"><div id="prog" style="width:0%;height:100%;background:#0FB57A;border-radius:999px;transition:width .4s ease;"></div></div>
+      <div id="payline" style="font-size:11.5px;line-height:1.4;color:#8A968F;margin-top:10px;">Payouts land monthly once you pass $50.</div>
+    </div>
+    <div style="position:relative;overflow:hidden;background:#062318;border-radius:14px;padding:18px 20px;">
+      <div style="position:absolute;right:-30px;bottom:-30px;font-size:90px;opacity:.18;pointer-events:none;">🌍</div>
+      <div style="position:relative;">
+        <div style="font-size:10.5px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:#A9C4B8;">Climate impact</div>
+        <div style="display:flex;align-items:baseline;gap:6px;margin-top:8px;">
+          <span id="co2" class="sg" style="font-weight:700;font-size:28px;line-height:1;color:#fff;">0</span>
+          <span id="co2unit" style="font-weight:500;font-size:13px;line-height:1;color:#A9C4B8;">tonnes</span>
+        </div>
+        <div style="font-size:11.5px;line-height:1.4;color:#A9C4B8;margin-top:8px;">CO₂ offset through your bookings.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- plans (carbon fuel) -->
+  <div id="carbon-fuel" style="display:none;background:#fff;border:1px solid #E4E8E2;border-radius:20px;box-shadow:0 2px 8px rgba(10,61,44,.06),0 1px 2px rgba(10,61,44,.04);padding:24px;margin-bottom:16px;">
+    <div style="display:flex;align-items:flex-end;justify-content:space-between;gap:16px;margin-bottom:6px;">
+      <div>
+        <div style="font-size:11px;font-weight:600;letter-spacing:.12em;text-transform:uppercase;color:#5C6B64;margin-bottom:9px;">Current plan</div>
+        <div class="sg" style="font-weight:700;font-size:25px;line-height:1.1;color:#0C1A14;letter-spacing:-.02em;">Upgrade your <em style="font-style:italic;color:#0FB57A;">partner plan.</em></div>
+      </div>
+      <span class="mono" style="font-weight:600;font-size:12.5px;color:#088055;background:#D7F2E5;padding:8px 14px;border-radius:999px;white-space:nowrap;">Balance · <span id="carbon-bal">—</span></span>
+    </div>
+    <div style="font-size:13px;line-height:1.5;color:#5C6B64;margin:8px 0 16px;">Each plan includes AI credits, branding controls, and better economics as you grow.</div>
+    <div id="carbon-plans" class="rg3" style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;"></div>
+    <div id="carbon-features-row" style="display:none;margin-top:16px;">
+      <div style="font-size:10.5px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:#5C6B64;margin-bottom:8px;">Active features</div>
+      <div id="carbon-features" style="display:flex;flex-wrap:wrap;gap:7px;"></div>
+    </div>
+    <button id="carbon-hist-btn" onclick="toggleCarbonHistory()" style="margin-top:14px;font-size:12.5px;font-weight:600;color:#088055;background:none;border:none;cursor:pointer;padding:0;">View transaction history ↓</button>
+    <div id="carbon-history-wrap" style="display:none;margin-top:10px;">
+      <div id="carbon-history" style="font-size:13px;color:#5C6B64;"></div>
+    </div>
+  </div>
+
+  <!-- recent bookings -->
+  <div style="background:#fff;border:1px solid #E4E8E2;border-radius:16px;box-shadow:0 2px 8px rgba(10,61,44,.06),0 1px 2px rgba(10,61,44,.04);padding:22px;margin-bottom:16px;">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:18px;">
+      <div class="sg" style="font-weight:700;font-size:17px;color:#0C1A14;letter-spacing:-.01em;">Recent bookings</div>
+      <span id="bkcount" style="font-size:12px;font-weight:500;color:#8A968F;">0 total</span>
+    </div>
+    <div id="bktable">
+      <div style="text-align:center;padding:14px 0 6px;">
+        <div class="sg" style="font-weight:600;font-size:15px;line-height:1.3;color:#0C1A14;">No bookings yet — your first one's coming 🌱</div>
+        <div style="font-size:13px;line-height:1.4;color:#5C6B64;margin-top:6px;">Share your link below to start earning 5% on every stay.</div>
+      </div>
+    </div>
+  </div>
+
+
+  <!-- embed snippet -->
+  <div style="background:#fff;border:1px solid #E4E8E2;border-radius:16px;box-shadow:0 2px 8px rgba(10,61,44,.06),0 1px 2px rgba(10,61,44,.04);padding:22px;margin-bottom:16px;">
+    <div class="sg" style="font-weight:700;font-size:17px;color:#0C1A14;letter-spacing:-.01em;">Drop the widget on any site</div>
+    <div style="font-size:13px;line-height:1.4;color:#5C6B64;margin:7px 0 12px;">Paste this two-liner into your site&#39;s HTML — it loads your live booking widget automatically.</div>
+    <pre id="embed-snippet" style="background:#0A3D2C;color:#C8FFE0;border-radius:12px;padding:14px 16px;font-family:'JetBrains Mono',monospace;font-size:12px;line-height:1.6;overflow-x:auto;margin:0 0 10px;white-space:pre">Loading…</pre>
+    <button id="copy-embed" onclick="copyEmbed()" style="padding:8px 18px;border-radius:20px;border:none;font-size:13px;font-weight:600;color:#0C1A14;background:#C8FF7E;cursor:pointer;">Copy snippet</button>
+    <span id="copy-embed-msg" style="margin-left:10px;font-size:13px;color:#0a8f5b;display:none">Copied ✓</span>
+  </div>
+
+  <!-- per-channel links + your details -->
+  <div class="rg2" style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px;">
+    <div style="background:#fff;border:1px solid #E4E8E2;border-radius:16px;box-shadow:0 2px 8px rgba(10,61,44,.06),0 1px 2px rgba(10,61,44,.04);padding:22px;">
+      <div class="sg" style="font-weight:700;font-size:17px;color:#0C1A14;letter-spacing:-.01em;margin-bottom:10px;">Per-channel links</div>
+      <div id="channel-list"></div>
+    </div>
+    <div style="background:#fff;border:1px solid #E4E8E2;border-radius:16px;box-shadow:0 2px 8px rgba(10,61,44,.06),0 1px 2px rgba(10,61,44,.04);padding:22px;">
+      <div class="sg" style="font-weight:700;font-size:17px;color:#0C1A14;letter-spacing:-.01em;margin-bottom:10px;">Your details</div>
+      <div id="partner-details"></div>
+    </div>
+  </div>
+
+  <!-- customization -->
+  <div style="background:#fff;border:1px solid #E4E8E2;border-radius:16px;box-shadow:0 2px 8px rgba(10,61,44,.06),0 1px 2px rgba(10,61,44,.04);padding:22px;margin-bottom:16px;">
+    <div style="font-size:11px;font-weight:600;letter-spacing:.12em;text-transform:uppercase;color:#5C6B64;margin-bottom:8px;">Customization</div>
+    <div class="sg" style="font-weight:700;font-size:19px;color:#0C1A14;letter-spacing:-.01em;">Make it <em style="font-style:italic;color:#0FB57A;">yours.</em></div>
+    <div style="font-size:13px;line-height:1.5;color:#5C6B64;margin:6px 0 18px;">Changes go live within 60 seconds.</div>
+
+    <div class="rg-cust" style="display:grid;grid-template-columns:1.2fr 1fr;gap:24px;">
+      <!-- form column -->
+      <div>
+        <!-- branding -->
+        <div class="plan-section-wrap" id="section-branding">
+        <div style="font-size:10.5px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:#8A968F;margin-bottom:8px;">Branding</div>
+        <div style="height:1px;background:#E4E8E2;margin-bottom:14px;"></div>
+
+        <label style="display:block;font-size:12.5px;font-weight:500;color:#33453D;margin-bottom:6px;">Brand name</label>
+        <input id="c-name" type="text" placeholder="Your brand" oninput="previewCustomize()" style="width:100%;font-size:13.5px;color:#0C1A14;background:#FBFCFA;border:1px solid #D3D9D2;border-radius:11px;padding:11px 13px;margin-bottom:10px;">
+        <div style="font-size:11px;font-weight:600;color:#5C6B64;letter-spacing:.07em;margin-bottom:5px;margin-top:4px;">WIDGET TITLE</div>
+        <input id="c-widget-title" type="text" value="Book your stay" oninput="previewCustomize()" style="width:100%;font-size:13.5px;color:#0C1A14;background:#FBFCFA;border:1px solid #D3D9D2;border-radius:11px;padding:11px 13px;margin-bottom:10px;">
+        <div style="font-size:11px;font-weight:600;color:#5C6B64;letter-spacing:.07em;margin-bottom:5px;">TAGLINE</div>
+        <input id="c-tagline" type="text" value="5% cash back · 1 tonne CO₂ offset per night" oninput="previewCustomize()" style="width:100%;font-size:13.5px;color:#0C1A14;background:#FBFCFA;border:1px solid #D3D9D2;border-radius:11px;padding:11px 13px;margin-bottom:14px;">
+
+        </div><!-- /section-branding -->
+
+        <div class="plan-section-wrap" id="section-color">
+        <label style="display:block;font-size:12.5px;font-weight:500;color:#33453D;margin-bottom:9px;">Primary colour</label>
+        <div style="display:flex;align-items:center;gap:9px;flex-wrap:wrap;margin-bottom:4px;">
+          <div id="color-swatches" style="display:flex;gap:8px;flex-wrap:wrap;"></div>
+          <label style="position:relative;width:26px;height:26px;border-radius:8px;border:1.5px dashed #B0BAB5;cursor:pointer;display:flex;align-items:center;justify-content:center;overflow:hidden;" title="Custom colour">
+            <span style="font-size:13px;color:#8A968F;">+</span>
+            <input id="c-color-picker" type="color" value="#0FB57A" oninput="onColorPicker(this.value)" style="position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%;">
+          </label>
+        </div>
+        <input id="c-color" type="hidden" value="#0FB57A">
+        </div><!-- /section-color -->
+
+        <!-- texts -->
+        <div class="plan-section-wrap" id="section-texts">
+        <div style="font-size:10.5px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:#8A968F;margin:22px 0 8px;">Texts</div>
+        <div style="height:1px;background:#E4E8E2;margin-bottom:14px;"></div>
+
+        <label style="display:block;font-size:12.5px;font-weight:500;color:#33453D;margin-bottom:6px;">AI chat greeting <span style="color:#8A968F;font-weight:400;">(first message)</span></label>
+        <textarea id="c-greeting" rows="2" oninput="previewCustomize()" style="width:100%;resize:none;font-size:13.5px;line-height:1.45;color:#0C1A14;background:#FBFCFA;border:1px solid #D3D9D2;border-radius:11px;padding:11px 13px;margin-bottom:14px;" placeholder="Hello — tell me your trip and I'll line up hotels."></textarea>
+
+        <label style="display:block;font-size:12.5px;font-weight:500;color:#33453D;margin-bottom:6px;">Chat input placeholder</label>
+        <input id="c-placeholder" type="text" placeholder="Where are you headed?" oninput="previewCustomize()" style="width:100%;font-size:13.5px;color:#0C1A14;background:#FBFCFA;border:1px solid #D3D9D2;border-radius:11px;padding:11px 13px;margin-bottom:0;">
+
+        </div><!-- /section-texts -->
+
+        <!-- button -->
+        <div class="plan-section-wrap" id="section-button">
+        <div style="font-size:10.5px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:#8A968F;margin:22px 0 8px;">Widget button</div>
+        <div style="height:1px;background:#E4E8E2;margin-bottom:14px;"></div>
+
+        <label style="display:block;font-size:12.5px;font-weight:500;color:#33453D;margin-bottom:4px;">Button emoji &amp; label</label>
+        <div style="font-size:12px;color:#8A968F;margin-bottom:10px;">Shown on the floating widget button on your site</div>
+        <div style="display:flex;gap:9px;margin-bottom:10px;">
+          <input id="c-emoji" type="text" value="🏨" oninput="previewCustomize()" maxlength="4" style="width:52px;flex-shrink:0;text-align:center;font-size:20px;background:#FBFCFA;border:1px solid #D3D9D2;border-radius:11px;padding:9px 4px;">
+          <input id="c-btntext" type="text" value="Book a hotel" oninput="previewCustomize()" style="flex:1;min-width:0;font-size:13.5px;color:#0C1A14;background:#FBFCFA;border:1px solid #D3D9D2;border-radius:11px;padding:11px 13px;">
+        </div>
+        <div style="font-size:11px;font-weight:600;color:#5C6B64;letter-spacing:.07em;margin-bottom:5px;">BUTTON SUBTITLE</div>
+        <input id="c-btnsub" type="text" value="5% back · 1t CO₂ offset" oninput="previewCustomize()" style="width:100%;font-size:13.5px;color:#0C1A14;background:#FBFCFA;border:1px solid #D3D9D2;border-radius:11px;padding:11px 13px;margin-bottom:12px;">
+        <div style="margin-bottom:14px;">
+          <div style="font-size:11px;font-weight:600;color:#5C6B64;letter-spacing:.07em;margin-bottom:8px;">BUTTON PREVIEW</div>
+          <div id="fab-preview" style="display:inline-flex;align-items:center;gap:9px;background:linear-gradient(135deg,#0b4a40,#0f5d50);color:#fff;font-size:14px;font-weight:600;padding:13px 18px;border-radius:999px;box-shadow:0 8px 22px -6px rgba(11,74,64,.5);">
+            <span id="fab-prev-emoji" style="font-size:20px;">🏨</span>
+            <span style="line-height:1.3;"><span id="fab-prev-text">Book a hotel</span><span id="fab-prev-br" style="display:none"><br></span><small id="fab-prev-sub" style="font-weight:500;opacity:.82;font-size:11px;display:none;"></small></span>
+          </div>
+        </div>
+
+        </div><!-- /section-button -->
+
+        <div class="plan-section-wrap" id="section-whitelabel">
+        <label id="hide-pw-label" style="display:flex;align-items:center;gap:10px;font-size:13px;font-weight:500;line-height:1.3;color:#33453D;background:#FBFCFA;border:1px solid #D3D9D2;border-radius:11px;padding:12px 13px;cursor:pointer;">
+          <span id="hide-pw-box" style="width:18px;height:18px;border-radius:5px;border:1.5px solid #D3D9D2;background:#fff;flex-shrink:0;display:flex;align-items:center;justify-content:center;transition:all .15s;"></span>
+          <input id="c-hide-powered" type="checkbox" style="display:none;">
+          Remove "Powered by IMPT" footer
+        </label>
+
+        </div><!-- /section-whitelabel -->
+
+        <div id="cnote" style="display:none;font-size:12px;line-height:1.4;color:#8A968F;background:#FFFBEB;border:1px solid #FDE68A;border-radius:9px;padding:10px 12px;margin-top:12px;">Open your dashboard link from your welcome email to save changes.</div>
+        <div id="cok" style="display:none;font-size:12.5px;color:#0a8f5b;background:#D7F2E5;border-radius:9px;padding:10px 12px;margin-top:12px;"></div>
+        <div id="cerr" style="display:none;font-size:12.5px;color:#b04632;background:#FEE2E2;border-radius:9px;padding:10px 12px;margin-top:12px;"></div>
+        <button id="csave" onclick="saveCustomize()" style="width:100%;margin-top:12px;font-size:14px;font-weight:600;color:#fff;background:#0A3D2C;border:0;border-radius:999px;padding:13px;cursor:pointer;transition:background .15s;" onmouseover="this.style.background='#0f5d46'" onmouseout="this.style.background='#0A3D2C'">Save changes</button>
+      </div>
+
+      <!-- real widget preview -->
+      <div>
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;">
+          <div style="font-size:10.5px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:#8A968F;">Live preview</div>
+          <span style="display:inline-flex;align-items:center;gap:6px;font-size:10px;font-weight:600;color:#088055;">
+            <span style="width:6px;height:6px;border-radius:50%;background:#0FB57A;animation:pulseDot 2s ease infinite;"></span>Live
+          </span>
+        </div>
+        <div style="border-radius:18px;box-shadow:0 14px 34px rgba(10,61,44,.16);border:1px solid #E4E8E2;overflow:hidden;display:inline-block;width:100%;max-width:420px;">
+          <div id="impt-swarm"></div>
+        </div>
+        <div style="font-size:11px;line-height:1.4;color:#8A968F;margin-top:10px;text-align:center;">This is exactly what visitors see on your site.</div>
+      </div>
+    </div>
+    <div style="font-size:12px;line-height:1.5;color:#8A968F;margin-top:20px;text-align:center;">Changes are previewed instantly above — nothing goes live until you save.</div>
+  </div>
+
+  <!-- share link -->
+  <div style="background:#fff;border:1px solid #E4E8E2;border-radius:16px;box-shadow:0 2px 8px rgba(10,61,44,.06),0 1px 2px rgba(10,61,44,.04);padding:22px;">
+    <div class="sg" style="font-weight:700;font-size:17px;color:#0C1A14;letter-spacing:-.01em;">Share your link 🌍</div>
+    <div style="font-size:13px;line-height:1.4;color:#5C6B64;margin:7px 0 16px;">One link. 8M+ hotels worldwide. Every stay offsets 1 tonne of CO₂.</div>
+    <div class="rg-share" style="display:grid;grid-template-columns:1fr auto;gap:14px;align-items:start;">
+      <div>
+        <div style="display:flex;gap:8px;">
+          <input id="url" readonly style="flex:1;font-family:'JetBrains Mono',monospace;font-size:12.5px;color:#33453D;background:#FBFCFA;border:1px solid #D3D9D2;border-radius:11px;padding:11px 13px;cursor:pointer;" onclick="this.select()">
+          <button id="copyb" onclick="copyLink()" style="font-size:13px;font-weight:600;color:#fff;background:#0FB57A;border:0;border-radius:11px;padding:0 18px;cursor:pointer;white-space:nowrap;">Copy</button>
+        </div>
+        <div id="chips" style="display:flex;gap:7px;flex-wrap:wrap;margin-top:13px;"></div>
+        <a id="sig" href="#" style="display:inline-block;margin-top:13px;font-size:12.5px;font-weight:600;color:#088055;">Grab your email signature →</a>
+      </div>
+      <div style="text-align:center;">
+        <img id="qr" src="" alt="QR code" style="width:96px;height:96px;border-radius:12px;border:1px solid #E4E8E2;display:block;">
+        <div style="font-size:10px;line-height:1;color:#8A968F;margin-top:8px;">Scan to share</div>
+      </div>
+    </div>
+  </div>
+
+  <div style="margin-top:32px;text-align:center;font-size:12px;color:#8A968F;">IMPT — hotels that pay you back &amp; offset carbon · 8M+ hotels worldwide · every stay offsets 1 tonne of CO₂</div>
+
 </div>
+
+<style>
+/* bookings table */
+table{width:100%;border-collapse:collapse;font-size:12.5px;}
+thead th{font-size:10px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:#8A968F;text-align:left;padding:9px 10px;background:#FBFCFA;border-bottom:1px solid #E4E8E2;}
+th.r,td.r{text-align:right;}
+tbody tr{border-bottom:1px solid #F3F5F2;}
+tbody tr:last-child{border-bottom:0;}
+td{padding:12px 10px;color:#33453D;vertical-align:top;}
+.hname{font-size:13px;font-weight:600;color:#0C1A14;}
+.hsub{font-size:11px;color:#8A968F;margin-top:3px;}
+.tabnum{font-family:'JetBrains Mono',monospace;font-size:12.5px;}
+.acc{color:#088055!important;font-weight:600!important;}
+.spill{display:inline-block;font-size:11px;font-weight:600;padding:3px 9px;border-radius:999px;}
+.spill.paid{background:#D7F2E5;color:#088055;}
+.spill.conf{background:#DBEAFE;color:#1D4ED8;}
+.spill.pend{background:#FEF3C7;color:#92400E;}
+/* plan cards */
+.plan-card{display:flex;flex-direction:column;border:1px solid #E4E8E2;border-radius:14px;padding:18px 16px;text-decoration:none;color:inherit;transition:box-shadow .15s,border-color .15s;}
+.plan-card:hover{box-shadow:0 4px 16px rgba(10,61,44,.1);border-color:#B5DFD1;}
+.plan-card.featured{border-color:#0FB57A;box-shadow:0 6px 20px rgba(10,61,44,.12);background:#FAFFFE;}
+.plan-badge{font-size:9.5px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:#088055;background:#D7F2E5;padding:4px 8px;border-radius:999px;display:inline-block;margin-bottom:10px;}
+.plan-spacer{height:26px;}
+.plan-name{font-size:13px;font-weight:700;color:#0C1A14;letter-spacing:-.01em;margin-bottom:5px;}
+.plan-price-row{font-family:'Schibsted Grotesk',system-ui;font-weight:700;font-size:28px;color:#0C1A14;letter-spacing:-.02em;line-height:1;}
+
+.plan-divider{height:1px;background:#E4E8E2;margin:12px 0;}
+.plan-inherited{font-size:11px;font-weight:600;color:#5C6B64;margin-bottom:8px;}
+.plan-feats{list-style:none;margin:0;padding:0;flex:1;}
+.plan-feats li{font-size:12px;line-height:1.5;color:#33453D;padding:3px 0 3px 17px;position:relative;}
+.plan-feats li::before{content:"✓";position:absolute;left:0;color:#0FB57A;font-weight:700;font-size:11px;top:4px;}
+.plan-credits{font-family:'JetBrains Mono',monospace;font-size:12.5px;font-weight:600;color:#088055;margin-top:5px;}
+.plan-cta{margin-top:14px;font-size:12.5px;font-weight:600;color:#0FB57A;text-align:center;}
+/* feat pills */
+.feat-pill{font-size:12px;font-weight:500;color:#088055;background:#D7F2E5;padding:5px 11px;border-radius:999px;}
+/* carbon history table */
+.hist-table{border:1px solid #E4E8E2;border-radius:12px;overflow:hidden;border-collapse:collapse;}
+.hist-row td{padding:9px 12px;}
+/* share chips */
+.chip{font-size:12px;font-weight:500;color:#33453D;border:1px solid #D3D9D2;border-radius:999px;padding:7px 14px;transition:background .12s;}
+.chip:hover{background:#F0F3EE;}
+
+/* ── Responsive ──────────────────────────────────────── */
+@media(max-width:600px){
+  body{padding:20px 12px 48px;}
+  .rg3{grid-template-columns:1fr!important;}
+  .rg2{grid-template-columns:1fr!important;}
+  .rg-cust{grid-template-columns:1fr!important;gap:20px!important;}
+  .rg-share{grid-template-columns:1fr!important;}
+  .rg-share > div:last-child{display:flex;flex-direction:column;align-items:center;margin-top:4px;}
+  #bktable{overflow-x:auto;-webkit-overflow-scrolling:touch;}
+  table{min-width:460px;}
+  #month{font-size:42px!important;}
+  #hi{font-size:15px!important;}
+}
+@media(max-width:420px){
+  .hero-stats{grid-template-columns:repeat(2,1fr)!important;}
+  .hero-stats > div:last-child{grid-column:1/-1;}
+}
+/* login card */
+.login-card{background:#fff;border:1px solid #E4E8E2;border-radius:16px;padding:28px 24px;margin-bottom:16px;box-shadow:0 2px 8px rgba(10,61,44,.06);}
+.login-title{font-family:'Schibsted Grotesk',system-ui;font-weight:700;font-size:20px;color:#0C1A14;letter-spacing:-.01em;margin-bottom:8px;}
+.login-sub{font-size:13.5px;line-height:1.5;color:#5C6B64;margin-bottom:18px;}
+.login-row{display:flex;gap:9px;margin-bottom:12px;}
+.login-input{flex:1;font-size:14px;color:#0C1A14;background:#FBFCFA;border:1px solid #D3D9D2;border-radius:11px;padding:12px 14px;}
+.login-btn{font-size:13.5px;font-weight:600;color:#fff;background:#0A3D2C;border:0;border-radius:999px;padding:0 20px;cursor:pointer;white-space:nowrap;}
+.login-msg{font-size:13px;margin-bottom:8px;}
+.login-foot{font-size:12.5px;color:#8A968F;}
+.alert{background:#FEE2E2;border:1px solid #FECACA;border-radius:12px;padding:14px 16px;font-size:13px;color:#b04632;margin-bottom:16px;}
+</style>
 
 <script>
 (function(){
@@ -122,7 +387,8 @@
     walks:{label:"Walks & Hiking",emoji:"🥾",hi:function(n){return "Boots ready, "+n+" 🥾";},share:"Hikers — book your stays through me, earn cashback & offset your trip 🌲"},
     scuba:{label:"Scuba",emoji:"🤿",hi:function(n){return "Dive in, "+n+" 🤿";},share:"Divers — book hotels through me, earn cashback & offset every stay 🐠"},
     clubs:{label:"Clubs",emoji:"🎟️",hi:function(n){return "Welcome back, "+n+" 🎟️";},share:"Members — book any hotel through me, earn cashback & offset every trip ✨"},
-    brands:{label:"Brands",emoji:"✨",hi:function(n){return "Welcome back, "+n+" ✨";},share:"Book through us — earn cashback & offset 1 tonne of CO₂ per stay."}
+    brands:{label:"Brands",emoji:"✨",hi:function(n){return "Welcome back, "+n+" ✨";},share:"Book through us — earn cashback & offset 1 tonne of CO₂ per stay."},
+    carbon:{label:"Carbon",emoji:"🌿",hi:function(n){return "Hey "+n+" 🌿";},share:"Book any hotel — carbon-offset, same price as the big sites, every stay funds climate action 🌿"}
   };
   var qs=new URLSearchParams(location.search);
   var key=qs.get("k")||qs.get("key")||"", token=qs.get("t")||"", vq=(qs.get("v")||"").toLowerCase(), demo=qs.get("demo")==="1";
@@ -135,24 +401,25 @@
 
   var theme="widget", t=TH.widget;
   function applyTheme(v){ if(TH[v]){theme=v;} t=TH[theme]; document.body.setAttribute("data-v",theme);
-    $("pillLabel").textContent="Your "+t.label+" widget · Live"; $("shareEmoji").textContent=t.emoji; }
+    if($("pillLabel")) $("pillLabel").innerHTML='<span style="width:6px;height:6px;border-radius:50%;background:#0FB57A;flex-shrink:0;animation:pulseDot 2s ease infinite;"></span>Your '+t.label+' widget · Live';
+    if($("shareEmoji")) $("shareEmoji").textContent=t.emoji; }
 
   function buildShareLinks(){
     var page = key ? (BASE+"/api/widget/r?key="+encodeURIComponent(key)) : "";
-    $("url").value = page || "Your link appears once your dashboard loads";
-    $("qr").src = BASE+"/api/widget/qr/"+encodeURIComponent(key||"demo")+".png";
-    $("sig").href = BASE+"/api/email/sig/"+encodeURIComponent(key||"demo");
+    if($("url")) $("url").value = page || "Your link appears once your dashboard loads";
+    if($("qr")) $("qr").src = BASE+"/api/widget/qr/"+encodeURIComponent(key||"demo")+".png";
+    if($("sig")) $("sig").href = BASE+"/api/email/sig/"+encodeURIComponent(key||"demo");
     var msg=t.share+(page?(" "+page):""), enc=encodeURIComponent(msg), encU=encodeURIComponent(page), encL=encodeURIComponent(t.share);
     var ch=[["WhatsApp","https://wa.me/?text="+enc],["Telegram","https://t.me/share/url?url="+encU+"&text="+encL],
       ["X","https://twitter.com/intent/tweet?text="+enc],["Facebook","https://www.facebook.com/sharer/sharer.php?u="+encU],
       ["LinkedIn","https://www.linkedin.com/sharing/share-offsite/?url="+encU],
       ["Email","mailto:?subject="+encodeURIComponent("Book hotels that pay you back")+"&body="+enc],["SMS","sms:?&body="+enc]];
-    $("chips").innerHTML=ch.map(function(c){var on=!!page;
+    if($("chips")) $("chips").innerHTML=ch.map(function(c){var on=!!page;
       return '<a class="chip" '+(on?'href="'+c[1]+'" target="_blank" rel="noreferrer"':'aria-disabled="true" style="opacity:.5;pointer-events:none"')+'>'+c[0]+'</a>';}).join("");
   }
 
   window.copyLink=function(){var i=$("url");i.select();try{navigator.clipboard.writeText(i.value);}catch(e){}
-    var b=$("copyb");b.textContent="Copied ✓";setTimeout(function(){b.textContent="Copy";},1600);};
+    var b=$("copyb");b.textContent="Copied ✓";b.style.background="#088055";setTimeout(function(){b.textContent="Copy";b.style.background="#0FB57A";},1600);};
 
   window.doLogin=function(){
     var e=($("loginEmail").value||"").trim(), m=$("loginMsg"), b=$("loginBtn");
@@ -165,16 +432,261 @@
       .catch(function(){ b.disabled=false; b.textContent="Email me my link"; m.style.display="block"; m.style.color="#b04632"; m.textContent="Something went wrong — please try again."; });
   };
 
-  window.saveBrand=function(){
-    var nm=($("bname").value||"").trim(); $("bok").style.display="none"; $("berr").style.display="none";
-    if(!token){$("berr").textContent="Open your dashboard link from your welcome email to save.";$("berr").style.display="block";return;}
-    if(!nm){return;}
-    var b=$("bsave");b.disabled=true;b.textContent="Saving…";
-    fetch(BASE+"/api/widget/setname",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({key:key,token:token,name:nm})})
-      .then(function(r){return r.json();}).then(function(d){ b.disabled=false;b.textContent="Save";
-        if(d&&d.ok){$("bok").textContent="✓ Saved — that's how guests will see you.";$("bok").style.display="block";}
-        else{$("berr").textContent="Couldn't save — check you opened this from your welcome-email link.";$("berr").style.display="block";}})
-      .catch(function(){b.disabled=false;b.textContent="Save";$("berr").textContent="Couldn't save — try again.";$("berr").style.display="block";});
+  // ---- Checkbox custom UI ----
+  window.syncCheckbox = function() {
+    var box = $('hide-pw-box'), cb = $('c-hide-powered');
+    if (!box || !cb) return;
+    box.style.background = cb.checked ? '#0FB57A' : '#fff';
+    box.style.borderColor = cb.checked ? '#0FB57A' : '#D3D9D2';
+    box.innerHTML = cb.checked ? '<svg width="10" height="8" viewBox="0 0 10 8" fill="none"><path d="M1 4l3 3 5-6" stroke="#fff" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>' : '';
+  };
+  // Wire checkbox label click after DOM ready
+  document.addEventListener('DOMContentLoaded', function() {
+    var lbl = $('hide-pw-label');
+    if (lbl) lbl.addEventListener('click', function(e) {
+      if (e.target.tagName === 'INPUT') return; // let native checkbox handle it
+      var cb = $('c-hide-powered');
+      cb.checked = !cb.checked;
+      syncCheckbox(); previewCustomize();
+    });
+  });
+
+  // ---- Color swatches ----
+  var SWATCHES = ['#0FB57A','#6C8CF5','#7C3AED','#E5484D','#E6A93C','#0E7C86','#1E3A8A','#0C1A14'];
+  var _selColor = '#0FB57A';
+
+  function initSwatches() {
+    var sw = $('color-swatches'); if (!sw) return;
+    sw.innerHTML = '';
+    SWATCHES.forEach(function(hex) {
+      var s = document.createElement('span');
+      var isSelected = hex.toLowerCase() === _selColor.toLowerCase();
+      s.style.cssText = 'width:26px;height:26px;border-radius:8px;cursor:pointer;background:'+hex+';display:inline-block;flex-shrink:0;transition:box-shadow .12s;'+(isSelected?'box-shadow:0 0 0 2px #fff,0 0 0 4px '+hex+';':'');
+      s.title = hex;
+      s.onclick = function() { setColor(hex); };
+      sw.appendChild(s);
+    });
+  }
+
+  function setColor(hex) {
+    _selColor = hex;
+    if ($('c-color')) $('c-color').value = hex;
+    if ($('c-color-picker')) $('c-color-picker').value = hex;
+    initSwatches();
+    previewCustomize();
+  }
+
+  window.onColorPicker = function(hex) {
+    _selColor = hex;
+    if ($('c-color')) $('c-color').value = hex;
+    initSwatches();
+    previewCustomize();
+  };
+
+  // ---- Live preview via real widget ----
+  window.previewCustomize = function() {
+    var name = ($('c-name') ? $('c-name').value : '').trim();
+    var logo = ($('c-logo') ? $('c-logo').value : '').trim();
+    var color = ($('c-color') ? $('c-color').value : '') || '#0FB57A';
+    var greeting = ($('c-greeting') ? $('c-greeting').value : '').trim();
+    var placeholder = ($('c-placeholder') ? $('c-placeholder').value : '').trim() || 'Where are you headed?';
+    var emoji = ($('c-emoji') ? $('c-emoji').value : '').trim() || '🏨';
+    var btntext = ($('c-btntext') ? $('c-btntext').value : '').trim() || 'Book a hotel';
+    var btnsub = ($('c-btnsub') ? $('c-btnsub').value : '').trim();
+    var hidePb = !!($('c-hide-powered') && $('c-hide-powered').checked);
+
+    // Drive the real embedded widget directly
+    if (window.__imptApplyBrand) {
+      window.__imptApplyBrand({
+        name: name, logo: logo, color: color,
+        greetingText: greeting, chatPlaceholder: placeholder,
+        buttonText: btntext, buttonEmoji: emoji, buttonSubtitle: btnsub, hidePoweredBy: hidePb
+      });
+    }
+    // Direct shadow DOM — handles hidePoweredBy, title, tagline
+    var swarmHost = document.getElementById('impt-swarm');
+    var sr = swarmHost && swarmHost.shadowRoot;
+    if (sr) {
+      var hideFt = sr.querySelector('#impt-hide-ft');
+      if (!hideFt) { hideFt = document.createElement('style'); hideFt.id = 'impt-hide-ft'; sr.appendChild(hideFt); }
+      hideFt.textContent = hidePb ? '.ft{display:none!important}' : '';
+      var wtitle = ($('c-widget-title') ? $('c-widget-title').value : '').trim();
+      var wtagline = ($('c-tagline') ? $('c-tagline').value : '').trim();
+      var h4 = sr.querySelector('h4'); if (h4) { h4.textContent = wtitle; h4.style.display = wtitle ? '' : 'none'; }
+      var tagEl = sr.querySelector('.hd p'); if (tagEl) { tagEl.textContent = wtagline; tagEl.style.display = wtagline ? '' : 'none'; }
+    }
+    // Update FAB button mockup in form
+    var fpE = $('fab-prev-emoji'); if (fpE) fpE.textContent = emoji;
+    var fpT = $('fab-prev-text'); if (fpT) fpT.textContent = btntext.replace(/[<>]/g,'');
+    var fpS = $('fab-prev-sub'); if (fpS) { fpS.textContent = btnsub.replace(/[<>]/g,''); fpS.style.display = btnsub ? 'inline' : 'none'; var fpBr = $('fab-prev-br'); if (fpBr) fpBr.style.display = btnsub ? 'inline' : 'none'; }
+    // sync mockup color to brand color
+    var fpWrap = $('fab-preview'); var cc = ($('c-color') ? $('c-color').value : '') || '#0b4a40';
+    if (fpWrap) fpWrap.style.background = 'linear-gradient(135deg,' + cc + 'dd,' + cc + ')';
+    if (false) {
+    }
+  };
+
+  // ---- Load brand settings into form ----
+  function loadCustomize(k, t) {
+    fetch(BASE+'/api/widget/brand?key='+encodeURIComponent(k))
+      .then(function(r){return r.json();})
+      .then(function(b) {
+        if (!b) return;
+        if (b.name && $('c-name')) $('c-name').value = b.name;
+        if (b.logo && $('c-logo')) $('c-logo').value = b.logo;
+        if (b.color) { setColor(b.color); }
+        if (b.greetingText && $('c-greeting')) $('c-greeting').value = b.greetingText;
+        if (b.chatPlaceholder && $('c-placeholder')) $('c-placeholder').value = b.chatPlaceholder;
+        if (b.buttonText && $('c-btntext')) $('c-btntext').value = b.buttonText;
+        if (b.buttonEmoji && $('c-emoji')) $('c-emoji').value = b.buttonEmoji;
+        if ($('c-hide-powered')) { $('c-hide-powered').checked = !!b.hidePoweredBy; window.syncCheckbox && syncCheckbox(); }
+        if (b.widgetTitle && $('c-widget-title')) $('c-widget-title').value = b.widgetTitle;
+        if (b.widgetTagline && $('c-tagline')) $('c-tagline').value = b.widgetTagline;
+        if (b.buttonSubtitle && $('c-btnsub')) $('c-btnsub').value = b.buttonSubtitle;
+        if (!t) {
+          if ($('cnote')) $('cnote').style.display='block';
+          if ($('csave')) $('csave').style.display='none';
+        }
+        previewCustomize();
+      }).catch(function(){});
+  }
+
+  // ── Plan gating ──────────────────────────────────────────────────────
+  window._custPlan = null; // 'none','starter','pro','growth'
+
+  function _showPlanToast(msg, warn) {
+    var t = document.getElementById('plan-toast');
+    if (!t) return;
+    t.textContent = msg;
+    t.className = warn ? 'warn' : '';
+    t.classList.add('show');
+    clearTimeout(t._tid);
+    t._tid = setTimeout(function(){ t.classList.remove('show'); }, 3200);
+  }
+
+  function _lockSection(id, msg) {
+    var el = document.getElementById(id);
+    if (!el) return;
+    // make sure wrapper is positioned
+    el.style.position = 'relative';
+    if (el.querySelector('.plan-lock-overlay')) return; // already locked
+    var ov = document.createElement('div');
+    ov.className = 'plan-lock-overlay';
+    ov.innerHTML = '<span class="lock-icon">🔒</span><span class="lock-msg">' + msg + '</span><span class="lock-cta" onclick="_showPlanToast(\'Upgrade to Pro to unlock all customization\', false)">Upgrade to Pro →</span>';
+    ov.addEventListener('click', function(){ _showPlanToast('Upgrade to Pro to unlock all customization', false); });
+    el.appendChild(ov);
+  }
+
+  function _unlockSection(id) {
+    var el = document.getElementById(id);
+    if (!el) return;
+    var ov = el.querySelector('.plan-lock-overlay');
+    if (ov) ov.remove();
+  }
+
+  window.initCustGating = function(plan, features) {
+    window._custPlan = plan || 'none';
+    var hasPro = !!(features && features.branding_unlocked);
+    var hasStarter = !!(features && features.chat_enabled);
+
+    // Branding, texts, button, whitelabel — Pro only
+    var proSections = ['section-branding','section-texts','section-button','section-whitelabel'];
+    for (var i = 0; i < proSections.length; i++) {
+      if (hasPro) _unlockSection(proSections[i]);
+      else _lockSection(proSections[i], 'Requires Pro plan');
+    }
+
+    // Color — Starter+
+    if (hasStarter || hasPro) _unlockSection('section-color');
+    else _lockSection('section-color', 'Requires Starter plan');
+
+    // Show plan badge near save button
+    var planBadge = document.getElementById('plan-badge');
+    if (!planBadge) {
+      planBadge = document.createElement('div');
+      planBadge.id = 'plan-badge';
+      planBadge.style.cssText = 'font-size:11.5px;font-weight:600;text-align:center;padding:7px;border-radius:8px;margin-bottom:8px;';
+      var csave = document.getElementById('csave');
+      if (csave) csave.parentNode.insertBefore(planBadge, csave);
+    }
+    if (hasPro) {
+      planBadge.textContent = '✓ Pro plan — all customization unlocked';
+      planBadge.style.cssText += 'background:#D7F2E5;color:#0a8f5b;';
+    } else if (hasStarter) {
+      planBadge.textContent = '⚡ Starter plan — colour customization only';
+      planBadge.style.cssText += 'background:#FFF8E1;color:#8a6200;';
+    } else {
+      planBadge.textContent = '🔒 No active plan — customization locked';
+      planBadge.style.cssText += 'background:#FEE2E2;color:#b04632;';
+    }
+  };
+
+  window.saveCustomize = function() {
+    if ($('cok')) $('cok').style.display='none';
+    if ($('cerr')) $('cerr').style.display='none';
+    // Pre-save plan check
+    var hasPro = window._custPlan === 'pro' || window._custPlan === 'growth';
+    var hasStarter = window._custPlan === 'starter' || hasPro;
+    if (!hasStarter) {
+      _showPlanToast('Subscribe to a plan to use customization', true);
+      return;
+    }
+    if (!hasPro) {
+      // starter — only color allowed, warn if pro fields have non-default values
+      var proFields = [
+        {id:'c-name',def:''}, {id:'c-widget-title',def:'Book your stay'},
+        {id:'c-tagline',def:'5% cash back · 1 tonne CO₂ offset per night'},
+        {id:'c-greeting',def:''}, {id:'c-placeholder',def:''},
+        {id:'c-btntext',def:'Book a hotel'}, {id:'c-emoji',def:'🏨'},
+        {id:'c-btnsub',def:'5% back · 1t CO₂ offset'}
+      ];
+      var dirty = proFields.some(function(f){ var el=$( f.id); return el && el.value.trim() !== f.def; });
+      if (dirty) { _showPlanToast('Those fields require the Pro plan — only colour will be saved', true); }
+    }
+    if (!token) {
+      if ($('cerr')) { $('cerr').textContent='Open your dashboard link from your welcome email to save.'; $('cerr').style.display='block'; }
+      return;
+    }
+    var b = $('csave'); b.disabled=true; b.textContent='Saving…';
+    var payload = {
+      key: key, token: token,
+      name: ($('c-name')?$('c-name').value:'').trim(),
+      logo_url: ($('c-logo')?$('c-logo').value:'').trim(),
+      primary_color: ($('c-color')?$('c-color').value:'')||'',
+      greeting_text: ($('c-greeting')?$('c-greeting').value:'').trim(),
+      chat_placeholder: ($('c-placeholder')?$('c-placeholder').value:'').trim(),
+      button_text: ($('c-btntext')?$('c-btntext').value:'').trim(),
+      button_emoji: ($('c-emoji')?$('c-emoji').value:'').trim(),
+      hide_powered_by: !!($('c-hide-powered')&&$('c-hide-powered').checked),
+      widget_title: ($('c-widget-title')?$('c-widget-title').value:'').trim(),
+      widget_tagline: ($('c-tagline')?$('c-tagline').value:'').trim(),
+      button_subtitle: ($('c-btnsub')?$('c-btnsub').value:'').trim()
+    };
+    fetch(BASE+'/api/widget/brand/save', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(payload)})
+      .then(function(r){return r.json();})
+      .then(function(d) {
+        b.disabled=false; b.textContent='Save changes';
+        if (d&&d.ok) {
+          // Update localStorage so widget reflects immediately without API round-trip
+          try { localStorage.setItem('_impt_b_'+key, JSON.stringify({
+            name: payload.name, logo: payload.logo_url, color: payload.primary_color,
+            widgetTitle: payload.widget_title, widgetTagline: payload.widget_tagline,
+            greetingText: payload.greeting_text, chatPlaceholder: payload.chat_placeholder,
+            buttonText: payload.button_text, buttonEmoji: payload.button_emoji,
+            buttonSubtitle: payload.button_subtitle, hidePoweredBy: payload.hide_powered_by
+          })); } catch(e) {}
+          previewCustomize();
+          if (d.warnings && d.warnings.length) {
+            var wmsgs = [];
+            if (d.warnings.indexOf('pro_plan_required') > -1) wmsgs.push('Pro-only fields were not saved — upgrade to unlock');
+            if (d.warnings.indexOf('starter_plan_required') > -1) wmsgs.push('Colour requires a Starter plan — upgrade to unlock');
+            _showPlanToast(wmsgs.join(' · '), true);
+          }
+          if($('cok')){$('cok').textContent='✓ Saved — changes go live within 60 seconds.';$('cok').style.display='block';}
+        } else {
+          if($('cerr')){$('cerr').textContent='Could not save — try again.';$('cerr').style.display='block';}
+        }
+      }).catch(function(){ b.disabled=false; b.textContent='Save changes'; if($('cerr')){$('cerr').textContent='Network error — try again.';$('cerr').style.display='block';} });
   };
 
   function paint(d){
@@ -182,17 +694,17 @@
     function sum(f){return b.filter(f).reduce(function(a,x){return a+(x.accrual_eur_cents||0);},0);}
     var month=sum(function(x){return now-x.booked_at<=30*86400;});
     var pend=sum(function(x){return x.status==="pending";});
-    var paid=sum(function(x){return x.status==="paid";});
+    var paid_=sum(function(x){return x.status==="paid";});
     var life=sum(function(){return true;});
     var clicks=d.clicks_30d||0;
     var conv=clicks?Math.round(1000*b.length/clicks)/10:0;
     var bal=(d.balance_eur_cents!=null)?d.balance_eur_cents:sum(function(x){return x.status==="pending"||x.status==="payable"||x.status==="checked_in";});
-    $("month").textContent=eur(month); $("pending").textContent=eur(pend); $("paid").textContent=eur(paid); $("life").textContent=eur(life);
+    $("month").textContent=eur(month); $("pending").textContent=eur(pend); $("paid").textContent=eur(paid_); $("life").textContent=eur(life);
     $("clicks").textContent=num(clicks); $("bookings").textContent=num(b.length); $("conv").textContent=conv+"%";
     $("co2").textContent=num(b.length); $("co2unit").textContent=(b.length===1?"tonne":"tonnes");
     var ready=bal>=THRESH, pct=Math.min(100,Math.round(100*bal/THRESH));
     $("prog").style.width=pct+"%"; $("paypct").textContent=pct+"%";
-    $("payv").textContent=ready?"🎉 You're ready for payout!":(eur(bal)+" of ~$50");
+    $("payv").textContent=ready?"🎉 Ready for payout!":(eur(bal)+" of ~$50");
     $("payline").textContent=ready?"We'll send your payout in the next monthly run.":"Payouts go monthly once you pass $50.";
     $("bkcount").textContent=b.length+" total";
     if(b.length){
@@ -206,13 +718,258 @@
     }
   }
 
-  // initial theme from ?v= (data refines it once loaded)
   applyTheme(vq||"widget");
   buildShareLinks();
-  if(!token) $("bnote").style.display="block";
 
-  if(demo){
-    $("hi").textContent=t.hi("Alex");
+  function renderCarbon(fuel, partnerEmail) {
+    var section = $("carbon-fuel");
+    if (!section) return;
+    section.style.display = "block";
+    var bal = fuel.balance || 0;
+    $("carbon-bal").textContent = bal.toLocaleString() + " C";
+
+    var PAYMENT_BASE = "https://app.impt.io/swarm/checkout";
+    // ── Plan tiers — update prices before launch ──
+    var plans = [
+      {
+        id: "starter", name: "Starter", price: "$5", credits: "500 C", badge: false, cta: "Get started",
+        inherited: null,
+        features: ["AI booking concierge on your widget","5% back on every booking"]
+      },
+      {
+        id: "pro", name: "Pro", price: "$15", credits: "1,500 C", badge: true, cta: "Go Pro",
+        inherited: "Everything in Starter, plus:",
+        features: ["Full branding &amp; colour control","Custom logo, copy &amp; domain"]
+      },
+      {
+        id: "growth", name: "Growth", price: "$30", credits: "3,500 C", badge: false, cta: "Go Growth",
+        inherited: "Everything in Pro, plus:",
+        features: ["3% off every hotel booking","Priority payouts &amp; support"]
+      }
+    ];
+
+    $("carbon-plans").innerHTML = plans.map(function(p) {
+      var url = PAYMENT_BASE + "?plan=" + p.id + "&email=" + encodeURIComponent(partnerEmail||"") + "&key=" + encodeURIComponent(key);
+      var feats = p.features.map(function(f){ return '<li>' + f + '</li>'; }).join("");
+      return '<a href="' + url + '" target="_blank" rel="noreferrer" class="plan-card' + (p.badge ? ' featured' : '') + '">' +
+        (p.badge ? '<div class="plan-badge">MOST POPULAR</div>' : '<div class="plan-spacer"></div>') +
+        '<div class="plan-name">' + p.name + '</div>' +
+        '<div class="plan-price-row">' + p.price + '</div>' +
+        '<div class="plan-credits">' + p.credits + ' included</div>' +
+        '<div class="plan-divider"></div>' +
+        (p.inherited ? '<div class="plan-inherited">' + p.inherited + '</div>' : '') +
+        '<ul class="plan-feats">' + feats + '</ul>' +
+        '<div class="plan-cta">' + p.cta + ' →</div>' +
+        '</a>';
+    }).join("");
+
+    var FEAT_LABELS = { chat_enabled:"AI Chat", branding_unlocked:"Branding", hosted_page:"Hosted Page",
+      date_picker:"Date Picker", full_search:"Full Search", analytics:"Analytics", whitelabel:"Whitelabel" };
+    if (fuel.features) {
+      var active = Object.keys(fuel.features).filter(function(k){ return fuel.features[k] && FEAT_LABELS[k]; });
+      if (active.length) {
+        $("carbon-features").innerHTML = active.map(function(k){
+          return '<span class="feat-pill">✓ ' + FEAT_LABELS[k] + '</span>';
+        }).join("");
+        $("carbon-features-row").style.display = "block";
+      }
+    }
+  }
+
+  window.toggleCarbonHistory = function() {
+    var wrap = $("carbon-history-wrap"), btn = $("carbon-hist-btn");
+    if (wrap.style.display === "none") {
+      wrap.style.display = "block"; btn.textContent = "Hide history ↑";
+      if (!wrap.dataset.loaded) {
+        wrap.dataset.loaded = "1";
+        $("carbon-history").textContent = "Loading…";
+        fetch(BASE + "/api/widget/fuel/account/history", {headers:{Authorization:"Bearer "+token}})
+          .then(function(r){ return r.json(); })
+          .then(function(d){
+            var txs = d.transactions || [];
+            if (!txs.length) { $("carbon-history").textContent = "No transactions yet."; return; }
+            $("carbon-history").innerHTML = '<table class="hist-table" style="width:100%;border-collapse:collapse;">' +
+              txs.map(function(tx){
+                var sign = tx.amount > 0 ? '+' : '';
+                var col  = tx.amount > 0 ? '#0a8f5b' : '#b04632';
+                var dt   = new Date(tx.created_at * 1000).toLocaleDateString("en-IE",{day:"2-digit",month:"short",year:"numeric"});
+                return '<tr class="hist-row"><td style="padding:9px 12px;font-size:12px;color:#555">' + (tx.reason||'—') + '</td>' +
+                  '<td style="padding:9px 12px;font-size:12px;color:#888;text-align:right">' + dt + '</td>' +
+                  '<td style="padding:9px 12px;font-family:\'JetBrains Mono\',monospace;font-size:13px;font-weight:700;color:' + col + ';text-align:right">' + sign + tx.amount + ' C</td></tr>';
+              }).join("") + '</table>';
+          })
+          .catch(function(){ $("carbon-history").textContent = "Couldn't load history."; });
+      }
+    } else {
+      wrap.style.display = "none"; btn.textContent = "View transaction history ↓";
+    }
+  };
+
+  function fetchCarbon(k, email) {
+    if (token) {
+      // Account-level: aggregate balance across all widgets for this email
+      fetch(BASE + "/api/widget/fuel/account", {headers:{Authorization:"Bearer "+token}})
+        .then(function(r){ return r.ok ? r.json() : null; })
+        .then(function(d){ if (d) renderCarbon(d, email); })
+        .catch(function(){});
+    } else {
+      fetch(BASE + "/api/widget/fuel?key=" + encodeURIComponent(k))
+        .then(function(r){ return r.ok ? r.json() : null; })
+        .then(function(d){ if (d) renderCarbon(d, email); })
+        .catch(function(){});
+    }
+  }
+
+  // ---- Inject real widget script ----
+  function injectWidget(partnerKey) {
+    // Remove old widget guard so it can re-init with new key
+    // (only needed if page refreshed with different key — normally one init per page)
+    var existing = document.querySelector('script[data-impt-widget]');
+    if (existing) return; // already loaded
+    var s = document.createElement('script');
+    s.src = BASE + '/widget.v224.js';
+    s.setAttribute('data-key', partnerKey);
+    s.setAttribute('data-impt-widget', '1');
+    s.async = true;
+    document.head.appendChild(s);
+  }
+
+
+  window.signOut = function() { window.location.href = '/dashboard/'; };
+
+  function setupWidgetPreview() {
+    var waited = 0, MAX = 7000, step = 150;
+    var iv = setInterval(function() {
+      waited += step;
+      if (!window.__imptApplyBrand) {
+        if (waited >= MAX) clearInterval(iv);
+        return;
+      }
+      clearInterval(iv);
+      // Widget is live — re-apply form state (fixes race where loadCustomize resolved first)
+      previewCustomize();
+      // Add AI chat button if account eligible — bypass widget.js fuel check timing
+      if (!token) return;
+
+    }, step);
+  }
+
+  function buildEmbedSnippet(k) {
+    var pre = $("embed-snippet"); if (!pre) return;
+    pre.textContent = '<div id="impt-swarm"></div>\n<script src="' + BASE + '/widget.js" data-key="' + (k||"demo") + '" async><\/script>';
+  }
+
+  function buildChannels(k) {
+    var el = $("channel-list"); if (!el) return;
+    var refUrl  = BASE + "/api/widget/r?key=" + encodeURIComponent(k||"demo");
+    var sigUrl  = BASE + "/api/email/sig/" + encodeURIComponent(k||"demo");
+    var qrUrl   = BASE + "/api/widget/qr/" + encodeURIComponent(k||"demo") + ".png";
+    var waShare = "https://wa.me/?text=" + encodeURIComponent("Book hotels that pay you back & offset 1 tonne of CO₂ per stay → " + refUrl);
+    var tgShare = "https://t.me/share/url?url=" + encodeURIComponent(refUrl) + "&text=" + encodeURIComponent("Book hotels that pay you back & offset 1 tonne of CO₂ per stay");
+    var channels = [
+      {label:"Referral link",    icon:"🔗", url: refUrl,   live: true},
+      {label:"WhatsApp share",   icon:"💬", url: waShare,  live: true},
+      {label:"Telegram share",   icon:"✈️", url: tgShare,  live: true},
+      {label:"Email signature",  icon:"✉️", url: sigUrl,   live: true},
+      {label:"QR code",          icon:"⬛",       url: qrUrl,    live: true},
+      {label:"Instagram bot",    icon:"📸", url: "",       live: false},
+      {label:"Claude MCP",       icon:"🤖", url: "",       live: false},
+      {label:"ChatGPT GPT",      icon:"🧠", url: "",       live: false}
+    ];
+    el.innerHTML = channels.map(function(c) {
+      if (c.live) {
+        return '<div style="display:flex;align-items:center;gap:8px;padding:7px 0;border-bottom:1px solid #F0F3EF;">' +
+          '<span style="font-size:15px;width:20px;text-align:center;">' + c.icon + '</span>' +
+          '<span style="flex:1;font-size:13px;font-weight:500;color:#0C1A14;">' + c.label + '</span>' +
+          '<button data-ch-url="' + c.url + '" onclick="copyChannel(this)" style="padding:4px 10px;border-radius:12px;border:1px solid #D3D9D2;background:#fff;font-size:11px;cursor:pointer;color:#0C1A14;">Copy</button>' +
+          '</div>';
+      } else {
+        return '<div style="display:flex;align-items:center;gap:8px;padding:7px 0;border-bottom:1px solid #F0F3EF;opacity:.45;">' +
+          '<span style="font-size:15px;width:20px;text-align:center;">' + c.icon + '</span>' +
+          '<span style="flex:1;font-size:13px;font-weight:500;color:#0C1A14;">' + c.label + '</span>' +
+          '<span style="font-size:10px;font-weight:600;color:#8A968F;background:#F0F3EF;padding:3px 8px;border-radius:20px;">Soon</span>' +
+          '</div>';
+      }
+    }).join('');
+    var divs = el.querySelectorAll('div'); if (divs.length) divs[divs.length-1].style.borderBottom='none';
+  }
+
+  function fillDetails(p) {
+    var el = $("partner-details"); if (!el) return;
+    var statusColor = p.status === 'active' ? '#0a8f5b' : '#b04632';
+    var statusBg = p.status === 'active' ? '#E8FFF4' : '#FFF0EE';
+    var rows = [
+      {label:'Status', val:'<span style="background:'+statusBg+';color:'+statusColor+';padding:2px 10px;border-radius:20px;font-size:12px;font-weight:600;">'+(p.status||'unknown')+'</span>'},
+      {label:'Email', val: esc(p.email||'—')},
+      {label:'Brand', val: esc(p.name||'—')},
+      {label:'Payout', val: esc(p.payout_method||'Not set')},
+      {label:'Joined', val: fdate(p.created_at)}
+    ];
+    el.innerHTML = rows.map(function(r) {
+      return '<div style="display:flex;align-items:baseline;gap:8px;padding:6px 0;border-bottom:1px solid #F0F3EF;">' +
+        '<span style="font-size:12px;color:#8A968F;width:58px;flex-shrink:0;">' + r.label + '</span>' +
+        '<span style="font-size:13px;font-weight:500;color:#0C1A14;">' + r.val + '</span></div>';
+    }).join('');
+    var divs = el.querySelectorAll('div'); if (divs.length) divs[divs.length-1].style.borderBottom='none';
+  }
+
+  window.copyEmbed = function() {
+    var pre = $("embed-snippet"); if (!pre) return;
+    try { navigator.clipboard.writeText(pre.textContent); } catch(e) {}
+    var msg = $("copy-embed-msg"); if (msg) { msg.style.display='inline'; setTimeout(function(){ msg.style.display='none'; }, 1600); }
+  };
+
+  window.copyChannel = function(btn) {
+    var url = btn.getAttribute("data-ch-url");
+    try { navigator.clipboard.writeText(url); } catch(e) {}
+    var old = btn.textContent; btn.textContent = 'Copied ✓';
+    setTimeout(function(){ btn.textContent = old; }, 1600);
+  };
+
+  function buildSiblingsSwitcher(siblings, currentKey) {
+    var pill = $("pillLabel");
+    if (!pill || !siblings || siblings.length <= 1) return;
+    var cur = null;
+    for (var i = 0; i < siblings.length; i++) { if (siblings[i].key === currentKey) { cur = siblings[i]; break; } }
+    if (!cur) cur = siblings[0];
+    var th = TH[(cur.vertical||"").toLowerCase()] || TH.widget;
+
+    pill.style.cursor = "pointer";
+    pill.style.userSelect = "none";
+    pill.innerHTML =
+      '<span style="width:6px;height:6px;border-radius:50%;background:#0FB57A;flex-shrink:0;animation:pulseDot 2s ease infinite;display:inline-block;vertical-align:middle;margin-right:4px;"></span>' +
+      th.emoji + ' ' + th.label + ' <span style="font-size:9px;opacity:.65;margin-left:3px;">&#9660;</span>';
+
+    var drop = document.createElement("div");
+    drop.id = "siblings-drop";
+    drop.style.cssText = "display:none;position:absolute;top:calc(100% + 6px);left:0;background:#fff;border:1px solid #D3D9D2;border-radius:14px;box-shadow:0 8px 24px rgba(10,61,44,.14);min-width:200px;z-index:200;overflow:hidden;";
+    siblings.forEach(function(s) {
+      var sth = TH[(s.vertical||"").toLowerCase()] || TH.widget;
+      var isCur = s.key === currentKey;
+      var item = document.createElement("a");
+      item.href = "/dashboard/?k=" + encodeURIComponent(s.key) + "&t=" + encodeURIComponent(s.api_token);
+      item.style.cssText = "display:flex;align-items:center;gap:10px;padding:10px 15px;font-size:13px;font-weight:" + (isCur ? "600" : "500") + ";color:#0C1A14;text-decoration:none;background:" + (isCur ? "#F0F9F5" : "#fff") + ";border-bottom:1px solid #F3F5F2;";
+      if (!isCur) { item.onmouseover = function(){ this.style.background="#F7F8F5"; }; item.onmouseout = function(){ this.style.background="#fff"; }; }
+      var label = s.name ? s.name : sth.label;
+      item.innerHTML = '<span style="font-size:16px;">' + sth.emoji + '</span>' +
+        '<span style="flex:1;">' + label + '<span style="display:block;font-size:10.5px;font-weight:400;color:#8A968F;text-transform:capitalize;">' + (s.vertical||"widget") + '</span></span>' +
+        (isCur ? '<span style="font-size:10px;color:#088055;font-weight:600;">current</span>' : '');
+      drop.appendChild(item);
+    });
+    if (drop.lastChild) drop.lastChild.style.borderBottom = "none";
+
+    var wrap = document.createElement("div");
+    wrap.style.cssText = "position:relative;display:inline-flex;";
+    pill.parentNode.insertBefore(wrap, pill);
+    wrap.appendChild(pill);
+    wrap.appendChild(drop);
+
+    pill.onclick = function(e) { e.stopPropagation(); drop.style.display = drop.style.display === "none" ? "block" : "none"; };
+    document.addEventListener("click", function() { if (drop) drop.style.display = "none"; });
+  }
+
+  if (demo) {
+    $("hi").textContent = t.hi("Alex");
     paint({clicks_30d:412,balance_eur_cents:3820,bookings:[
       {booking_id:"BK-90211",base_value_cents:42000,accrual_eur_cents:2100,status:"payable",booked_at:Date.now()/1000-3*86400,check_in_at:Date.now()/1000+10*86400},
       {booking_id:"BK-90187",base_value_cents:28900,accrual_eur_cents:1445,status:"paid",booked_at:Date.now()/1000-14*86400,check_in_at:Date.now()/1000-2*86400},
@@ -220,23 +977,30 @@
       {booking_id:"BK-90121",base_value_cents:18700,accrual_eur_cents:935,status:"checked_in",booked_at:Date.now()/1000-20*86400,check_in_at:Date.now()/1000-1*86400},
       {booking_id:"BK-90099",base_value_cents:33400,accrual_eur_cents:1670,status:"paid",booked_at:Date.now()/1000-26*86400,check_in_at:Date.now()/1000-12*86400}
     ]});
+    injectWidget('demo-carbon');
+    setupWidgetPreview();
+    buildEmbedSnippet('demo-carbon');
+    buildChannels('demo-carbon');
+    fillDetails({key:'demo-carbon',email:'demo@impt.io',name:'IMPT Carbon Demo',status:'active',payout_method:'paypal',created_at:1746748800});
+    var ha=$("header-actions"); if(ha){ha.style.display="flex";}
+    initSwatches();
+    loadCustomize('demo-carbon', null);
     return;
   }
 
-  if(!token){
-    $("banner").innerHTML=
-      '<div class="card pad banner">'+
-        '<strong class="disp" style="font-size:17px">Log in to your dashboard</strong>'+
-        '<div class="muted" style="margin:6px 0 12px;font-size:14px">No password needed — enter the email you signed up with and we\'ll send your private dashboard link.</div>'+
-        '<div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">'+
-          '<input id="loginEmail" type="email" autocomplete="email" placeholder="you@email.com" style="flex:1;min-width:200px;padding:12px 14px;border-radius:10px;border:1px solid rgba(8,66,58,.2);font:inherit">'+
-          '<button id="loginBtn" class="btn" onclick="doLogin()">Email me my link</button>'+
-        '</div>'+
-        '<div id="loginMsg" style="margin-top:10px;font-size:14px;display:none"></div>'+
-        '<div class="muted" style="margin-top:12px;font-size:13px">New here? <a href="https://impt.io/widget" style="color:#0a8f5b">Get your free widget &amp; link →</a></div>'+
+  if (!token) {
+    $("banner").innerHTML =
+      '<div class="login-card">' +
+        '<div class="login-title">Log in to your dashboard</div>' +
+        '<div class="login-sub">No password needed — enter the email you signed up with and we\'ll send your private dashboard link.</div>' +
+        '<div class="login-row">' +
+          '<input id="loginEmail" type="email" autocomplete="email" placeholder="you@email.com" class="login-input" onkeydown="if(event.key===\'Enter\')doLogin()">' +
+          '<button id="loginBtn" class="login-btn" onclick="doLogin()">Email me my link</button>' +
+        '</div>' +
+        '<div id="loginMsg" class="login-msg"></div>' +
+        '<div class="login-foot">New here? <a href="https://impt.io/widget" style="color:#088055;font-weight:600">Get your free widget &amp; link →</a></div>' +
       '</div>';
-    $("hi").textContent="Your Partner Dashboard";
-    var le=$("loginEmail"); if(le){ le.addEventListener("keydown",function(ev){ if(ev.key==="Enter"){ doLogin(); } }); }
+    $("hi").textContent = "Your Partner Dashboard";
     return;
   }
 
@@ -246,13 +1010,42 @@
       var p=d.partner||{};
       if(!vq && p.vertical && TH[p.vertical.toLowerCase()]) applyTheme(p.vertical.toLowerCase());
       var nm=first(p.name,p.email); $("hi").textContent=t.hi(nm);
-      if(p.name && !$("bname").value) $("bname").value=p.name;
       if(p.key){ key=p.key; }
       buildShareLinks();
       paint(d);
+      fetchCarbon(p.key||key, p.email||"");
+      initSwatches();
+      loadCustomize(p.key||key, p.api_token||token);
+      // Inject real widget into preview area
+      injectWidget(p.key||key);
+      setupWidgetPreview();
+      buildEmbedSnippet(p.key||key);
+      // Fetch plan/features for customization gating
+      (function(k) {
+        fetch(BASE+'/api/widget/fuel?key='+encodeURIComponent(k))
+          .then(function(r){ return r.ok ? r.json() : null; })
+          .then(function(fuel) {
+            if (!fuel) return;
+            var plan = fuel.plan || (fuel.features && fuel.features.chat_enabled ? 'starter' : 'none');
+            if (fuel.plan) plan = fuel.plan;
+            window.initCustGating(plan, fuel.features || {});
+          }).catch(function(){});
+      })(p.key||key);
+      buildChannels(p.key||key);
+      fillDetails(p);
+      var ha=$("header-actions"); if(ha){ha.style.display="flex";}
+      (function(k, tok) {
+        fetch(BASE+"/api/widget/partners/siblings", {headers:{Authorization:"Bearer "+tok}})
+          .then(function(r){ return r.ok ? r.json() : {siblings:[]}; })
+          .then(function(d){ buildSiblingsSwitcher(d.siblings||[], k); })
+          .catch(function(){});
+      })(p.key||key, token);
     })
-    .catch(function(e){ $("banner").innerHTML='<div class="alert">Couldn\'t load your live numbers ('+esc(e.message)+'). Try refreshing your dashboard link.</div>'; });
+    .catch(function(e){
+      $("banner").innerHTML='<div class="alert">Couldn\'t load your live numbers ('+esc(e.message)+'). Try refreshing your dashboard link.</div>';
+    });
 })();
 </script>
+<div id="plan-toast"></div>
 </body>
 </html>

@@ -268,6 +268,9 @@ def init_db():
         ("button_text", "TEXT"),
         ("button_emoji", "TEXT"),
         ("hide_powered_by", "INTEGER DEFAULT 0"),
+        ("widget_title", "TEXT"),
+        ("widget_tagline", "TEXT"),
+        ("button_subtitle", "TEXT"),
     ]:
         try:
             with db() as c:
@@ -1138,22 +1141,24 @@ def track(request: Request, key: str = Query(..., max_length=64), evt: str = Que
 @app.get("/api/widget/brand")
 def brand(key: str = Query(..., max_length=64)):
     """Public: partner display name + all brand customisation fields for the widget."""
-    name = ""; logo = ""; color = ""; greeting_text = ""; chat_placeholder = ""; button_text = ""; button_emoji = ""; hide_powered_by = False
+    name = ""; logo = ""; color = ""; greeting_text = ""; chat_placeholder = ""; button_text = ""; button_emoji = ""; hide_powered_by = False; widget_title = ""; widget_tagline = ""; button_subtitle = ""
     with db() as c:
         try:
             r = c.execute("SELECT name FROM partners WHERE key=?", (key,)).fetchone()
             if r and r[0]: name = r[0]
         except Exception: pass
         try:
-            b = c.execute("SELECT name,logo_url,primary_color,greeting_text,chat_placeholder,button_text,button_emoji,hide_powered_by FROM partner_brand WHERE key=?", (key,)).fetchone()
+            b = c.execute("SELECT name,logo_url,primary_color,greeting_text,chat_placeholder,button_text,button_emoji,hide_powered_by,widget_title,widget_tagline,button_subtitle FROM partner_brand WHERE key=?", (key,)).fetchone()
             if b:
                 name = b[0] or name; logo = b[1] or ""; color = b[2] or ""
                 greeting_text = b[3] or ""; chat_placeholder = b[4] or ""
                 button_text = b[5] or ""; button_emoji = b[6] or ""; hide_powered_by = bool(b[7])
+                widget_title = b[8] or ""; widget_tagline = b[9] or ""; button_subtitle = b[10] or ""
         except Exception: pass
     return JSONResponse({"name": name, "logo": logo, "color": color,
                          "greetingText": greeting_text, "chatPlaceholder": chat_placeholder,
-                         "buttonText": button_text, "buttonEmoji": button_emoji, "hidePoweredBy": hide_powered_by},
+                         "buttonText": button_text, "buttonEmoji": button_emoji, "hidePoweredBy": hide_powered_by,
+                         "widgetTitle": widget_title, "widgetTagline": widget_tagline, "buttonSubtitle": button_subtitle},
                         headers={"Access-Control-Allow-Origin": "*", "Cache-Control": "no-store"})
 
 
@@ -1205,6 +1210,9 @@ class _BrandSave(BaseModel):
     button_text: str = Field("", max_length=40)
     button_emoji: str = Field("", max_length=8)
     hide_powered_by: bool = Field(False)
+    widget_title: str = Field("", max_length=80)
+    widget_tagline: str = Field("", max_length=120)
+    button_subtitle: str = Field("", max_length=80)
 
 @app.post("/api/widget/brand/save")
 def brand_save(p: _BrandSave):
@@ -1220,24 +1228,52 @@ def brand_save(p: _BrandSave):
     btxt = (p.button_text or "").strip()[:30]
     bemoji = (p.button_emoji or "").strip()[:4]
     hide_pb = bool(p.hide_powered_by)
-    # Gate logo and whitelabel (hide powered by) behind Pro plan
-    features = _features_get(p.key)
-    if not features.get("branding_unlocked"):
-        logo = ""
-        hide_pb = False
+    w_title = (p.widget_title or "").strip()[:70]
+    w_tagline = (p.widget_tagline or "").strip()[:100]
+    w_btnsub = (p.button_subtitle or "").strip()[:70]
+    # Gate fields by plan:
+    #   no plan  → nothing saved
+    #   starter  → color only (chat_enabled but not branding_unlocked)
+    #   pro/growth → everything (branding_unlocked)
+    features = _features_get_account(p.key)
+    branding_unlocked = bool(features.get("branding_unlocked"))
+    chat_enabled = bool(features.get("chat_enabled"))
+    warnings = []
+
+    if not branding_unlocked:
+        # Strip all pro-only fields
+        pro_fields = []
+        if nm:          pro_fields.append("name");            nm = ""
+        if logo:        pro_fields.append("logo");            logo = ""
+        if greeting:    pro_fields.append("greeting_text");   greeting = ""
+        if placeholder: pro_fields.append("chat_placeholder"); placeholder = ""
+        if btxt:        pro_fields.append("button_text");     btxt = ""
+        if bemoji:      pro_fields.append("button_emoji");    bemoji = ""
+        if hide_pb:     pro_fields.append("hide_powered_by"); hide_pb = False
+        if w_title:     pro_fields.append("widget_title");    w_title = ""
+        if w_tagline:   pro_fields.append("widget_tagline");  w_tagline = ""
+        if w_btnsub:    pro_fields.append("button_subtitle"); w_btnsub = ""
+        if pro_fields:
+            warnings.append("pro_plan_required")
+        if not chat_enabled:
+            # No plan at all — strip color too
+            if color: warnings.append("starter_plan_required"); color = ""
+
     with db() as c:
         r = c.execute("SELECT api_token FROM partners WHERE key=?", (p.key,)).fetchone()
         if not r or r[0] != p.token:
             raise HTTPException(403, "bad key/token")
-        c.execute("""INSERT INTO partner_brand(key,name,logo_url,primary_color,greeting_text,chat_placeholder,button_text,button_emoji,hide_powered_by,updated_at)
-            VALUES(?,?,?,?,?,?,?,?,?,?)
+        c.execute("""INSERT INTO partner_brand(key,name,logo_url,primary_color,greeting_text,chat_placeholder,button_text,button_emoji,hide_powered_by,widget_title,widget_tagline,button_subtitle,updated_at)
+            VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?)
             ON CONFLICT(key) DO UPDATE SET
               name=excluded.name, logo_url=excluded.logo_url, primary_color=excluded.primary_color,
               greeting_text=excluded.greeting_text, chat_placeholder=excluded.chat_placeholder,
               button_text=excluded.button_text, button_emoji=excluded.button_emoji, hide_powered_by=excluded.hide_powered_by,
+              widget_title=excluded.widget_title, widget_tagline=excluded.widget_tagline,
+              button_subtitle=excluded.button_subtitle,
               updated_at=excluded.updated_at""",
-            (p.key, nm, logo, color, greeting, placeholder, btxt, bemoji, int(hide_pb), int(time.time())))
-    return JSONResponse({"ok": True}, headers={"Access-Control-Allow-Origin": "*"})
+            (p.key, nm, logo, color, greeting, placeholder, btxt, bemoji, int(hide_pb), w_title, w_tagline, w_btnsub, int(time.time())))
+    return JSONResponse({"ok": True, "warnings": warnings}, headers={"Access-Control-Allow-Origin": "*"})
 
 
 @app.post("/api/widget/booking")
@@ -3121,6 +3157,25 @@ def _features_get(key: str):
         return d
 
 
+
+
+def _features_get_account(key: str):
+    """Aggregate features across all active partner keys for the same email."""
+    with db() as c:
+        partner = c.execute("SELECT email FROM partners WHERE key=?", (key,)).fetchone()
+        if not partner:
+            return {f: 0 for f in FEATURE_COSTS}
+        email = partner["email"]
+        keys = [r["key"] for r in c.execute(
+            "SELECT key FROM partners WHERE email=? AND status='active'", (email,)
+        ).fetchall()]
+    merged = {f: 0 for f in FEATURE_COSTS}
+    for k in keys:
+        for feat, val in _features_get(k).items():
+            if val:
+                merged[feat] = val
+    return merged
+
 def _fuel_credit(key: str, amount: int, reason: str, ref: str = None):
     import time
     now = int(time.time())
@@ -3200,21 +3255,104 @@ def carbon_plans():
 @app.get("/api/widget/fuel")
 def fuel_status(key: str):
     with db() as c:
-        partner = c.execute("SELECT key FROM partners WHERE key=?", (key,)).fetchone()
+        partner = c.execute("SELECT email FROM partners WHERE key=?", (key,)).fetchone()
     if not partner:
         raise HTTPException(404, "unknown key")
-    fuel = _fuel_get(key)
-    features = _features_get(key)
+    # Aggregate balance + features across ALL active keys for this email
+    email = partner["email"]
+    with db() as c:
+        keys = [r["key"] for r in c.execute(
+            "SELECT key FROM partners WHERE email=? AND status='active'", (email,)
+        ).fetchall()]
+    total_balance = 0
+    total_purchased = 0
+    merged_features = {f: 0 for f in FEATURE_COSTS}
+    plan = None
+    for k in keys:
+        fuel = _fuel_get(k)
+        total_balance += fuel["balance"]
+        total_purchased += fuel["total_purchased"]
+        if fuel.get("plan"):
+            plan = fuel["plan"]
+        for feat, val in _features_get(k).items():
+            if val:
+                merged_features[feat] = val
     return {
         "key": key,
-        "balance": fuel["balance"],
-        "total_purchased": fuel["total_purchased"],
-        "plan": fuel.get("plan"),
-        "features": features,
+        "balance": total_balance,
+        "total_purchased": total_purchased,
+        "plan": plan,
+        "features": merged_features,
         "prices": CARBON_PRICES,
         "feature_costs": FEATURE_COSTS,
     }
 
+
+
+
+@app.get("/api/widget/fuel/account")
+def fuel_account(authorization: str = Header(...)):
+    if not authorization.lower().startswith("bearer "):
+        raise HTTPException(401, "missing bearer")
+    token = authorization.split(" ", 1)[1].strip()
+    with db() as c:
+        partner = c.execute(
+            "SELECT email FROM partners WHERE api_token=?", (token,)
+        ).fetchone()
+        if not partner:
+            raise HTTPException(401, "bad token")
+        email = partner["email"]
+        keys = [r["key"] for r in c.execute(
+            "SELECT key FROM partners WHERE email=? AND status='active'", (email,)
+        ).fetchall()]
+    total_balance = 0
+    total_purchased = 0
+    merged_features = {}
+    plan = None
+    for k in keys:
+        fuel = _fuel_get(k)
+        total_balance += fuel["balance"]
+        total_purchased += fuel["total_purchased"]
+        if fuel.get("plan"):
+            plan = fuel["plan"]
+        for feat, val in _features_get(k).items():
+            if val:
+                merged_features[feat] = val
+    return {
+        "email": email,
+        "balance": total_balance,
+        "total_purchased": total_purchased,
+        "plan": plan,
+        "features": merged_features,
+        "prices": CARBON_PRICES,
+        "feature_costs": FEATURE_COSTS,
+    }
+
+
+@app.get("/api/widget/fuel/account/history")
+def fuel_account_history(authorization: str = Header(...)):
+    if not authorization.lower().startswith("bearer "):
+        raise HTTPException(401, "missing bearer")
+    token = authorization.split(" ", 1)[1].strip()
+    with db() as c:
+        partner = c.execute(
+            "SELECT email FROM partners WHERE api_token=?", (token,)
+        ).fetchone()
+        if not partner:
+            raise HTTPException(401, "bad token")
+        email = partner["email"]
+        rows = c.execute(
+            "SELECT ft.amount, ft.reason, ft.ref, ft.created_at, ft.key "
+            "FROM fuel_transactions ft "
+            "JOIN partners p ON p.key = ft.key "
+            "WHERE p.email=? "
+            "ORDER BY ft.created_at DESC LIMIT 100",
+            (email,)
+        ).fetchall()
+    return {"email": email, "transactions": [
+        {"amount": r[0], "reason": r[1], "ref": r[2], "created_at": r[3], "key": r[4]}
+        for r in rows
+    ]}
 
 @app.get("/api/widget/fuel/history")
 def fuel_history(key: str, token: str):
@@ -3287,6 +3425,16 @@ try:
 except Exception as _e:
     import sys as _sys
     print(f"[franchise] router mount FAILED: {_e}", file=_sys.stderr)
+
+# ── IMPT Regional Partner instant-checkout endpoints (2026-06-28) ──
+# Mounts /api/partner/apply + /api/partner/activate. DB: same swarm_widget.db,
+# new table partner_applications created on first import. Web2 (no token).
+try:
+    from partner_endpoints import router as _partner_router  # noqa: E402
+    app.include_router(_partner_router)
+except Exception as _e:
+    import sys as _sys
+    print(f"[partner] router mount FAILED: {_e}", file=_sys.stderr)
 
 
 if __name__ == "__main__":

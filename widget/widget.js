@@ -1,5 +1,5 @@
 /*!
- * IMPT Swarm Widget v2.0.0 (2026-06-07) — professional, shadow-DOM isolated.
+ * IMPT Swarm Widget v2.2.4 (2026-06-25) — professional, shadow-DOM isolated.
  * Dual mode: renders a polished inline card into #impt-swarm / [data-impt-swarm] if present,
  * otherwise a floating bottom-right launcher. Preserves the v1 contract:
  *   <script src="https://swarm.impt.io/widget.js" data-key="YOUR_KEY" async></script>
@@ -14,22 +14,126 @@
   var me = document.currentScript ||
     document.querySelector('script[src*="widget.js"]');
   var KEY = (me && me.getAttribute('data-key')) || 'swarm-public';
-  var TITLE = (me && me.getAttribute('data-title')) || 'Book your stay';  /* v2.1 brand name */
+  var TITLE = (me && me.getAttribute('data-title')) || 'Book your stay';
   var HOST = location.host;
   var BRAND = 'https://swarm.impt.io/api/widget/brand';
   var CONFIG_URL = 'https://swarm.impt.io/api/widget/config';
   var POS = (me && me.getAttribute('data-position')) || 'auto';
-  function loadBrand(rt) {
-    try {
-      fetch(BRAND + '?key=' + encodeURIComponent(KEY)).then(function(r){return r.json();}).then(function(b){
-        if (!b || (!b.name && !b.logo)) return;
-        var el = rt.getElementById('impt-brand'); if (!el) return;
+
+  function _applyBrand(rt, b) {
+    if (!b) return;
+    // Brand name + logo
+    if (b.name || b.logo) {
+      var el = rt.querySelector('#impt-brand'); if (el) {
         var h = '';
-        if (b.logo) h += '<img src="' + b.logo + '" alt="">';
+        if (b.logo) h += '<img src="' + b.logo + '" alt="" style="height:22px;max-width:100px;object-fit:contain;border-radius:4px;background:#fff;padding:2px 5px;margin-right:6px">';
         if (b.name) h += '<span>' + String(b.name).replace(/[<>]/g,'').slice(0,40) + '</span>';
         el.innerHTML = h;
+      }
+    }
+    // Primary color — widget AND chat globals
+    var c = (b.color || '').replace(/[^#0-9a-fA-F]/g,'');
+    window.__imptPrimaryColor = c || '';
+    if (c) {
+      // CSS injection covers elements not yet in DOM (floating FAB on load)
+      var bsEl = rt.querySelector('#impt-brand-style');
+      if (!bsEl) { bsEl = document.createElement('style'); bsEl.id = 'impt-brand-style'; (rt.head || rt).appendChild(bsEl); }
+      bsEl.textContent = '.hd{background:linear-gradient(135deg,' + c + 'dd,' + c + ')!important}.btn{background:' + c + '!important}.fab{background:' + c + '!important}';
+      // Direct inline !important — beats any CSS !important (including loadSurf vertical themes)
+      var _hd = rt.querySelector('.hd'); if (_hd) _hd.style.setProperty('background', 'linear-gradient(135deg,' + c + 'dd,' + c + ')', 'important');
+      var _bt = rt.querySelector('.btn'); if (_bt) _bt.style.setProperty('background', c, 'important');
+      var _fb = rt.querySelector('.fab'); if (_fb) _fb.style.setProperty('background', c, 'important');
+    }
+    // FAB button text + emoji
+    var fabEl = rt.querySelector('#impt-fab');
+    if (fabEl) {
+      var emoji = (b.buttonEmoji || '').replace(/[<>]/g,'');
+      var txt = (b.buttonText || '').replace(/[<>]/g,'').slice(0,30);
+      if (emoji || txt) {
+        var subHtml = b.buttonSubtitle ? '<br><small style="font-weight:500;opacity:.82;font-size:11px">' + String(b.buttonSubtitle).replace(/[<>]/g,'').slice(0,50) + '</small>' : '';
+        fabEl.innerHTML = '<span style="font-size:20px">' + (emoji || '🏨') + '</span><span>' + (txt || 'Book a hotel') + subHtml + '</span>';
+      }
+    }
+    // Widget title + tagline (inline card) — only override if non-empty, let template default show otherwise
+    var _h4 = rt.querySelector('h4');
+    if (_h4 && b.widgetTitle) _h4.textContent = b.widgetTitle;
+    var _hdp = rt.querySelector('.hd p');
+    if (_hdp && b.widgetTagline) _hdp.textContent = b.widgetTagline;
+    // Inline card search button — show custom text+emoji
+    var _btnEl = rt.querySelector('.btn');
+    if (_btnEl && (b.buttonText || b.buttonEmoji)) {
+      var _be = (b.buttonEmoji || '').replace(/[<>]/g,'');
+      var _bt = (b.buttonText || '').replace(/[<>]/g,'').slice(0,30);
+      _btnEl.textContent = (_be ? _be + ' ' : '') + (_bt || 'Search hotels') + ' →';
+    }
+    // Chat globals
+    if (b.greetingText) window.__imptGreeting = b.greetingText;
+    if (b.chatPlaceholder) window.__imptPlaceholder = b.chatPlaceholder;
+    window.__imptHidePowered = !!b.hidePoweredBy;
+    // Hide simple widget footer
+    if (b.hidePoweredBy) {
+      var hsEl = rt.querySelector('#impt-hide-ft');
+      if (!hsEl) { hsEl = document.createElement('style'); hsEl.id = 'impt-hide-ft'; (rt.head || rt).appendChild(hsEl); }
+      hsEl.textContent = '.ft{display:none!important}';
+    }
+  }
+
+  function loadBrand(rt) {
+    // Apply cached settings instantly — eliminates the color-flash on load
+    try {
+      var _lsk = '_impt_b_' + KEY;
+      var _stored = localStorage.getItem(_lsk);
+      if (_stored) _applyBrand(rt, JSON.parse(_stored));
+    } catch(e) {}
+    // Fetch fresh from API, update cache
+    try {
+      fetch(BRAND + '?key=' + encodeURIComponent(KEY))
+        .then(function(r){ return r.json(); })
+        .then(function(b) {
+          if (!b) return;
+          _applyBrand(rt, b);
+          try { localStorage.setItem('_impt_b_' + KEY, JSON.stringify(b)); } catch(e) {}
+        }).catch(function(){});
+    } catch(e) {}
+  }
+
+  // Vertical colour themes
+  var THEMES = {
+    mtb:   { d1:'#1a2e05', d2:'#3a5c0a', br:'#5a8a1a', ca:'#d4e6b5', tx:'#1a2e05', ft:'#f0f7e8', fc:'#3a5c0a', fb:'#c4d9a5' },
+    surf:  { d1:'#003366', d2:'#0055a4', br:'#0077cc', ca:'#b3d4f0', tx:'#00264d', ft:'#e8f2fb', fc:'#0055a4', fb:'#99c4e8' },
+    golf:  { d1:'#1a3300', d2:'#2d5500', br:'#4a8800', ca:'#d4eab5', tx:'#1a3300', ft:'#eef7e0', fc:'#2d5500', fb:'#c0dea0' },
+    lgbtq: { d1:'#5c0078', d2:'#8b00a8', br:'#b300d4', ca:'#e8b3f5', tx:'#3a004f', ft:'#f7eafc', fc:'#8b00a8', fb:'#d699f0' },
+    walks: { d1:'#2a1a00', d2:'#6b3d00', br:'#a05a00', ca:'#edd5b0', tx:'#2a1a00', ft:'#faf3e8', fc:'#6b3d00', fb:'#e0c090' },
+    scuba: { d1:'#001433', d2:'#002966', br:'#0042a8', ca:'#b0c8f5', tx:'#001433', ft:'#e8edfb', fc:'#002966', fb:'#9ab8f0' },
+    clubs: { d1:'#1a001a', d2:'#4d004d', br:'#7a007a', ca:'#e8b0e8', tx:'#1a001a', ft:'#f9eaf9', fc:'#4d004d', fb:'#d999d9' },
+    brands:{ d1:'#3a2e00', d2:'#9A7B12', br:'#C9A227', ca:'#ecddb0', tx:'#2a2000', ft:'#faf6e8', fc:'#7a6010', fb:'#e0cc90' },
+    carbon:{ d1:'#0a2a00', d2:'#0a5c00', br:'#0a8f5b', ca:'#c8eed8', tx:'#0a2a00', ft:'#eafaf0', fc:'#0a5c00', fb:'#b0e0c8' },
+    yoga:  { d1:'#2a0033', d2:'#5c006e', br:'#8a00a8', ca:'#e0b3f0', tx:'#1a0022', ft:'#f7e8fc', fc:'#5c006e', fb:'#cc99e8' },
+  };
+
+  function loadSurf(rt) {
+    try {
+      fetch(CONFIG_URL + '?key=' + encodeURIComponent(KEY)).then(function(r){ return r.json(); }).then(function(cfg) {
+        var vertical = cfg && cfg.vertical;
+        var th = THEMES[vertical];
+        if (!th) return;
+        var style = rt.querySelector('#impt-surf-style');
+        if (!style) { style = document.createElement('style'); style.id = 'impt-surf-style'; (rt.head || rt).appendChild(style); }
+        style.textContent = (
+          '.hd{background:linear-gradient(135deg,' + th.d1 + ',' + th.d2 + ')!important}' +
+          '.hd h4{color:#ffffff!important;font-size:17px!important;font-weight:700!important}' +
+          '.hd p{color:rgba(255,255,255,.82)!important}' +
+          '.card{border-color:' + th.ca + '!important}' +
+          'label{color:' + th.d2 + '!important;font-weight:700!important;letter-spacing:.16em!important}' +
+          'input,select{color:' + th.tx + '!important;border-color:' + th.ca + '!important;background:#fafaf8!important}' +
+          'input:focus,select:focus{border-color:' + th.br + '!important;box-shadow:0 0 0 3px rgba(128,128,128,.15)!important;background:#fff!important}' +
+          '.btn{background:linear-gradient(135deg,' + th.br + ',' + th.d2 + ')!important;color:#ffffff!important;font-weight:700!important;box-shadow:0 4px 18px -4px rgba(0,0,0,.3)!important}' +
+          '.ft{background:' + th.ft + '!important;color:' + th.fc + '!important;border-top:1px solid ' + th.fb + '!important}' +
+          '.brand span{color:rgba(255,255,255,.92)!important}' +
+          '.fab{background:linear-gradient(135deg,' + th.d1 + ' 0%,' + th.d2 + ' 100%)!important;box-shadow:0 10px 30px -8px rgba(0,0,0,.4)!important}'
+        );
       }).catch(function(){});
-    } catch (e) {}
+    } catch(e) {}
   }
 
   function track(evt, dest) {
@@ -46,9 +150,6 @@
     var dest = (rt.getElementById('impt-dest').value || '').trim();
     var cin = rt.getElementById('impt-ci').value, cout = rt.getElementById('impt-co').value;
     var g = rt.getElementById('impt-guests').value;
-    // Route via swarm.impt.io/api/widget/r — it logs the click, sets the first-party
-    // impt_partner cookie on .impt.io (so the booking attributes to THIS partner),
-    // then 302s to the search. This is what makes partner bookings show on the dashboard.
     var url = 'https://swarm.impt.io/api/widget/r?key=' + encodeURIComponent(KEY) +
       (dest ? '&dest=' + encodeURIComponent(dest) : '') +
       '&checkIn=' + encodeURIComponent(cin) + '&checkOut=' + encodeURIComponent(cout) +
@@ -56,218 +157,6 @@
     window.open(url, '_blank', 'noopener');
   }
 
-
-  var SURF_DESTS = [
-    ['Asia','Pecatu, Bali — 9 breaks','Pecatu Bali'],
-    ['Asia','Siargao, Philippines — 8 breaks','Siargao'],
-    ['Asia','Canggu, Bali — 6 breaks','Canggu Bali'],
-    ['Asia','Uluwatu, Bali — 6 breaks','Uluwatu Bali'],
-    ['Asia','Maldives — 5 breaks','Maldives'],
-    ['Asia','Arugam Bay, Sri Lanka — 4 breaks','Arugam Bay'],
-    ['Asia','Kuta Lombok — 3 breaks','Kuta Lombok'],
-    ['Asia','Kuta, Bali — 3 breaks','Kuta Bali'],
-    ['Asia','Nusa Lembongan, Bali — 3 breaks','Nusa Lembongan'],
-    ['Asia','Matara, Sri Lanka — 3 breaks','Matara Sri Lanka'],
-    ['Asia','Tabanan, Bali — 3 breaks','Tabanan Bali'],
-    ['Asia','Tel Aviv, Israel — 3 breaks','Tel Aviv'],
-    ['Asia','Midigama, Sri Lanka — 2 breaks','Midigama'],
-    ['Asia','Weligama, Sri Lanka — 1 break','Weligama'],
-    ['Asia','Ahangama, Sri Lanka — 1 break','Ahangama'],
-    ['Asia','Keramas, Bali — 1 break','Keramas Bali'],
-    ['Asia','Sanur, Bali — 1 break','Sanur Bali'],
-    ['Asia','Serangan, Bali — 1 break','Serangan Bali'],
-    ['Asia','Sumba, Indonesia — 1 break','Sumba'],
-    ['Asia','Sumbawa, Indonesia — 1 break','Sumbawa'],
-    ['Asia','Nias, Indonesia — 1 break','Nias'],
-    ['Asia','Cimaja, Java — 1 break','Cimaja Java'],
-    ['Asia','Timor — 1 break','Timor'],
-    ['Asia','West Papua — 1 break','West Papua'],
-    ['Asia','Hainan Island, China — 1 break','Hainan Island'],
-    ['Asia','Chigasaki, Japan — 1 break','Chigasaki'],
-    ['Asia','Taiwan — 1 break','Taiwan'],
-    ['Europe','Ericeira, Portugal — 12 breaks','Ericeira'],
-    ['Europe','Capbreton, France — 7 breaks','Capbreton'],
-    ['Europe','Seignosse, France — 6 breaks','Seignosse'],
-    ['Europe','Fuerteventura — 5 breaks','Fuerteventura Canary Islands'],
-    ['Europe','Hossegor, France — 4 breaks','Hossegor'],
-    ['Europe','Aljezur, Portugal — 3 breaks','Aljezur'],
-    ['Europe','Nazar\u00e9, Portugal — 3 breaks','Nazar\u00e9'],
-    ['Europe','Landes, France — 3 breaks','Landes France'],
-    ['Europe','Basque Coast, France — 3 breaks','Basque Coast France'],
-    ['Europe','Peniche, Portugal — 2 breaks','Peniche'],
-    ['Europe','Algarve, Portugal — 2 breaks','Algarve'],
-    ['Europe','Bundoran, Ireland — 2 breaks','Bundoran'],
-    ['Europe','Figueira da Foz, Portugal — 2 breaks','Figueira da Foz'],
-    ['Europe','Canary Islands, Spain — 2 breaks','Canary Islands'],
-    ['Europe','Biarritz, France — 1 break','Biarritz'],
-    ['Europe','Lagos, Portugal — 1 break','Lagos Portugal'],
-    ['Europe','Comporta, Portugal — 1 break','Comporta'],
-    ['Europe','Santa Cruz, Portugal — 1 break','Santa Cruz Portugal'],
-    ['Europe','Sintra, Portugal — 1 break','Sintra'],
-    ['Europe','Newquay, UK — 1 break','Newquay'],
-    ['Europe','Pembrokeshire, Wales — 1 break','Pembrokeshire Wales'],
-    ['Europe','Zarautz, Spain — 1 break','Zarautz'],
-    ['Europe','San Sebasti\u00e1n, Spain — 1 break','San Sebasti\u00e1n'],
-    ['Europe','Sopelana, Spain — 1 break','Sopelana'],
-    ['Europe','Cantabria, Spain — 1 break','Cantabria'],
-    ['Europe','Vejer de la Frontera, Spain — 1 break','Vejer de la Frontera C\u00e1diz'],
-    ['Europe','Hoddevik, Norway — 1 break','Hoddevik'],
-    ['Europe','Lofoten Islands, Norway — 1 break','Lofoten Islands'],
-    ['Americas','Oahu, Hawaii — 18 breaks','Oahu Hawaii'],
-    ['Americas','Tamarindo, Costa Rica — 9 breaks','Tamarindo Guanacaste'],
-    ['Americas','San Clemente, California — 8 breaks','San Clemente California'],
-    ['Americas','Popoyo, Nicaragua — 8 breaks','Popoyo Tola'],
-    ['Americas','Rinc\u00f3n, Puerto Rico — 7 breaks','Rinc\u00f3n'],
-    ['Americas','Puntarenas, Costa Rica — 7 breaks','Puntarenas'],
-    ['Americas','Tumbes, Peru — 7 breaks','Tumbes'],
-    ['Americas','Guanacaste, Costa Rica — 6 breaks','Guanacaste'],
-    ['Americas','Lima, Peru — 6 breaks','Lima'],
-    ['Americas','Lima Province, Peru — 6 breaks','Lima Province'],
-    ['Americas','San Juan del Sur, Nicaragua — 5 breaks','San Juan del Sur'],
-    ['Americas','Piura, Peru — 5 breaks','Piura'],
-    ['Americas','Lambayeque, Peru — 4 breaks','Lambayeque Peru'],
-    ['Americas','Waikiki, Hawaii — 3 breaks','Waikiki Honolulu Hawaii'],
-    ['Americas','Santa Cruz, California — 3 breaks','Santa Cruz California'],
-    ['Americas','Encinitas, California — 3 breaks','Encinitas California'],
-    ['Americas','Outer Banks, NC — 3 breaks','Outer Banks North Carolina'],
-    ['Americas','Nosara, Costa Rica — 3 breaks','Nosara Guanacaste'],
-    ['Americas','Santa Teresa, Costa Rica — 3 breaks','Santa Teresa Puntarenas'],
-    ['Americas','Puerto Viejo, Costa Rica — 3 breaks','Puerto Viejo de Talamanca Lim\u00f3n'],
-    ['Americas','Puerto Escondido, Mexico — 3 breaks','Puerto Escondido Oaxaca'],
-    ['Americas','Nayarit, Mexico — 3 breaks','Nayarit'],
-    ['Americas','Tofino, Canada — 3 breaks','Tofino British Columbia'],
-    ['Americas','Arequipa, Peru — 2 breaks','Arequipa Peru'],
-    ['Americas','El Tunco, El Salvador — 2 breaks','El Tunco La Libertad'],
-    ['Americas','Puerto Rico — 2 breaks','Puerto Rico'],
-    ['Americas','Kauai, Hawaii — 1 break','Kauai Hawaii'],
-    ['Americas','Maui, Hawaii — 1 break','Maui Hawaii'],
-    ['Americas','Malibu, California — 1 break','Malibu California'],
-    ['Americas','Half Moon Bay, CA — 1 break','Half Moon Bay California'],
-    ['Americas','Rockaway Beach, NY — 1 break','Rockaway Beach New York'],
-    ['Americas','San Onofre, CA — 1 break','San Onofre California'],
-    ['Americas','Baja California, Mexico — 1 break','Baja California'],
-    ['Americas','Lobitos, Peru — 1 break','Lobitos Piura'],
-    ['Americas','M\u00e1ncora, Peru — 1 break','M\u00e1ncora Piura'],
-    ['Americas','Paracas, Peru — 1 break','Paracas Ica'],
-    ['Americas','Trujillo, Peru — 1 break','Trujillo Peru'],
-    ['Americas','Bocas del Toro, Panama — 1 break','Bocas del Toro'],
-    ['Americas','Ped\u00e1s\u00ed, Panama — 1 break','Ped\u00e1s\u00ed Los Santos'],
-    ['Americas','El Sunzal, El Salvador — 1 break','El Sunzal La Libertad'],
-    ['Americas','Pichilemu, Chile — 1 break','Pichilemu'],
-    ['Americas','Florian\u00f3polis, Brazil — 1 break','Florian\u00f3polis'],
-    ['Americas','Anguilla — 1 break','Anguilla'],
-    ['Americas','Antigua — 1 break','Antigua'],
-    ['Americas','Barbados — 1 break','Barbados'],
-    ['Americas','Grenada — 1 break','Grenada'],
-    ['Americas','Jamaica — 1 break','Jamaica'],
-    ['Africa','Jeffreys Bay, South Africa — 10 breaks','Jeffreys Bay'],
-    ['Africa','Taghazout, Morocco — 4 breaks','Taghazout'],
-    ['Africa','Muizenberg, Cape Town — 1 break','Muizenberg Cape Town'],
-    ['Africa','Cape Peninsula — 1 break','Cape Peninsula'],
-    ['Africa','Cape St Francis — 1 break','Cape St Francis'],
-    ['Africa','Tofo, Mozambique — 1 break','Tofo'],
-    ['Pacific','Byron Bay, Australia — 9 breaks','Byron Bay NSW'],
-    ['Pacific','Gold Coast, Australia — 9 breaks','Gold Coast Queensland'],
-    ['Pacific','Byron Shire, Australia — 9 breaks','Byron Shire NSW'],
-    ['Pacific','Tavarua, Fiji — 7 breaks','Tavarua Fiji'],
-    ['Pacific','Raglan, New Zealand — 3 breaks','Raglan'],
-    ['Pacific','Brunswick Heads, Australia — 2 breaks','Brunswick Heads NSW'],
-    ['Pacific','Ballina, Australia — 1 break','Ballina NSW'],
-    ['Pacific','Noosa Heads, Australia — 1 break','Noosa Heads Queensland'],
-    ['Pacific','Manly, Australia — 1 break','Manly NSW'],
-    ['Pacific','Queenstown, New Zealand — 1 break','Queenstown'],
-    ['Pacific','Samoa — 1 break','Samoa'],
-    ['Pacific','Vanuatu — 1 break','Vanuatu'],
-    ['Pacific','Papua New Guinea — 1 break','Papua New Guinea']
-  ];
-
-  function buildSurfOpts(region) {
-    var opts = '<option value="">Choose a surf spot\u2026</option>';
-    var list = region ? SURF_DESTS.filter(function(d){return d[0]===region;}) : SURF_DESTS;
-    list.forEach(function(d){ opts += '<option value="'+d[2]+'">'+d[1]+'</option>'; });
-    return opts;
-  }
-
-  // Colour themes per vertical — deep1/deep2 (header gradient) + bright (focus/btn accent)
-  var WIDGET_THEMES = {
-    surf:   { d1:'#03224c', d2:'#0a6eaa', br:'#2CA6DF', ca:'#b3d9f0', tx:'#0c2340', ft:'#eef6fc', fc:'#5b8fa8', fb:'#d0e9f5' },
-    mtb:    { d1:'#3d1a08', d2:'#B8541E', br:'#E08A3C', ca:'#f5d9c0', tx:'#2a1005', ft:'#fdf3ec', fc:'#7a4020', fb:'#f0cba8' },
-    walks:  { d1:'#142b18', d2:'#2F5D3A', br:'#6BA15B', ca:'#c8e0c0', tx:'#142b18', ft:'#f0f7ee', fc:'#3a6040', fb:'#b0d4a8' },
-    ski:    { d1:'#0d2238', d2:'#2E6B8A', br:'#7FB8D8', ca:'#bcd8ec', tx:'#0d2238', ft:'#edf5fb', fc:'#2E6B8A', fb:'#a8cce0' },
-    pets:   { d1:'#4a2800', d2:'#C2773A', br:'#E0A86B', ca:'#f5dfc0', tx:'#3a1f00', ft:'#fdf5ec', fc:'#8a5020', fb:'#f0cfa0' },
-    golf:   { d1:'#0a2e18', d2:'#1F6B3A', br:'#62B36C', ca:'#c0dcc5', tx:'#0a2e18', ft:'#eef7f0', fc:'#1F6B3A', fb:'#a8d0b0' },
-    yoga:   { d1:'#253d30', d2:'#5A7D6B', br:'#9DC4B0', ca:'#c8ddd5', tx:'#253d30', ft:'#f0f6f3', fc:'#5A7D6B', fb:'#b0ccc0' },
-    lgbtq:  { d1:'#5a0a3f', d2:'#B81C8C', br:'#E84BC0', ca:'#f0b8e0', tx:'#3a0828', ft:'#fdf0f8', fc:'#B81C8C', fb:'#e8a0d0' },
-    scuba:  { d1:'#03243a', d2:'#0B5E78', br:'#2FA8C8', ca:'#b0d8e8', tx:'#03243a', ft:'#eaf6fb', fc:'#0B5E78', fb:'#98c8dc' },
-    clubs:  { d1:'#0d1e40', d2:'#1B3A6B', br:'#4C7AC0', ca:'#bccce8', tx:'#0d1e40', ft:'#eef2fb', fc:'#1B3A6B', fb:'#a8bcd8' },
-    brands: { d1:'#3a2e00', d2:'#9A7B12', br:'#C9A227', ca:'#ecddb0', tx:'#2a2000', ft:'#faf6e8', fc:'#7a6010', fb:'#e0cc90' },
-    widget: { d1:'#052e1a', d2:'#0F6B3F', br:'#2FB06A', ca:'#b8dcc8', tx:'#052e1a', ft:'#edf7f2', fc:'#0F6B3F', fb:'#a0ccb4' }
-  };
-
-  function loadSurf(rt) {
-    try {
-      fetch(CONFIG_URL + '?key=' + encodeURIComponent(KEY))
-        .then(function(r){ return r.json(); })
-        .then(function(cfg) {
-          if (!cfg || !cfg.vertical) return;
-          var v = cfg.vertical;
-          var th = WIDGET_THEMES[v];
-          // Apply vertical colour theme to shadow DOM (skip generic 'widget' — uses base CSS default look)
-          if (th && v !== 'widget') {
-            var vStyle = rt.getElementById('v-css-override');
-            if (!vStyle) {
-              vStyle = document.createElement('style');
-              vStyle.id = 'v-css-override';
-              vStyle.textContent =
-                '.hd{background:linear-gradient(160deg,'+th.d1+' 0%,'+th.d2+' 100%)!important;box-shadow:0 4px 24px rgba(0,0,0,.28)!important}' +
-                '.fab{background:linear-gradient(135deg,'+th.d1+' 0%,'+th.d2+' 100%)!important;box-shadow:0 10px 30px -8px rgba(0,0,0,.4)!important}' +
-                '.hd h4{color:#ffffff!important;font-size:17px!important;font-weight:700!important}' +
-                '.hd p{color:rgba(255,255,255,.82)!important}' +
-                '.card{border-color:'+th.ca+'!important}' +
-                'label{color:'+th.d2+'!important;font-weight:700!important;letter-spacing:.16em!important}' +
-                'input,select{color:'+th.tx+'!important;border-color:'+th.ca+'!important;background:#fafaf8!important}' +
-                'input:focus,select:focus{border-color:'+th.br+'!important;box-shadow:0 0 0 3px rgba(128,128,128,.15)!important;background:#fff!important}' +
-                '.btn{background:linear-gradient(135deg,'+th.br+','+th.d2+')!important;color:#ffffff!important;font-weight:700!important;box-shadow:0 4px 18px -4px rgba(0,0,0,.3)!important}' +
-                '.btn:hover{filter:brightness(1.08)!important}' +
-                '.ft{background:'+th.ft+'!important;color:'+th.fc+'!important;border-top:1px solid '+th.fb+'!important}' +
-                '.brand span{color:rgba(255,255,255,.92)!important}' +
-                '.x{background:rgba(255,255,255,.18)!important}' +
-                '.x:hover{background:rgba(255,255,255,.32)!important}';
-              rt.appendChild(vStyle);
-            }
-          }
-          // Surf-only: replace destination input with region + spot dropdowns
-          if (v !== 'surf') return;
-          var destEl = rt.getElementById('impt-dest');
-          if (!destEl) return;
-          var wrap = destEl.parentNode;
-          wrap.innerHTML =
-            '<label>Region</label>'+
-            '<select id="impt-region" style="margin-bottom:8px">'+
-              '<option value="">All regions</option>'+
-              '<option value="Asia">Asia</option>'+
-              '<option value="Europe">Europe</option>'+
-              '<option value="Americas">Americas</option>'+
-              '<option value="Africa">Africa</option>'+
-              '<option value="Pacific">Pacific</option>'+
-            '</select>'+
-            '<label>Surf Spot</label>'+
-            '<select id="impt-dest">'+buildSurfOpts('')+'</select>';
-          var h4 = rt.querySelector('.hd h4');
-          if (h4) h4.textContent = 'Find hotels near surf spots';
-          var hdp = rt.querySelector('.hd p');
-          if (hdp) hdp.textContent = '161 surf destinations · 5% back · 1t CO₂ offset';
-          var btn = rt.getElementById('impt-go');
-          if (btn) btn.textContent = 'Find surf hotels →';
-          var ft = rt.querySelector('.ft');
-          if (ft) ft.textContent = 'Powered by IMPT — 161 surf destinations worldwide';
-          rt.getElementById('impt-region').addEventListener('change', function() {
-            rt.getElementById('impt-dest').innerHTML = buildSurfOpts(this.value);
-          });
-        })
-        .catch(function(){});
-    } catch(e) {}
-  }
   var ICON = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#C8FF7E" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 18v-6a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v6"/><path d="M3 18h18"/><path d="M6 10V7a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v3"/></svg>';
 
   var CSS = '\
@@ -331,9 +220,198 @@
     }
     rt.getElementById('impt-go').addEventListener('click', function(){ go(rt); });
     rt.getElementById('impt-dest').addEventListener('keydown', function(e){ if(e.key==='Enter') go(rt); });
+    _addWhatsApp(rt);
   }
 
-  function mount() {
+  // WhatsApp entry point on EVERY widget render (additive, 2026-06-28) — book via Laura's AI on WhatsApp.
+  function _addWhatsApp(rt) {
+    try {
+      var bd = rt.querySelector('.bd');
+      if (!bd || rt.getElementById('impt-wa')) return;
+      var host = '';
+      try { host = location.hostname; } catch (e) {}
+      var a = document.createElement('a');
+      a.id = 'impt-wa';
+      a.href = 'https://wa.me/353877868878?text=' +
+        encodeURIComponent('Hi IMPT — I want to book a hotel' + (host ? ' (from ' + host + ')' : ''));
+      a.target = '_blank'; a.rel = 'noopener';
+      a.innerHTML = '&#128172; Book on WhatsApp &mdash; we find it for you';
+      a.setAttribute('style', [
+        'display:block;width:100%;box-sizing:border-box;padding:11px 0;margin-top:8px;text-align:center;',
+        'background:#25D366;border:none;border-radius:12px;color:#073d27;font-size:13px;font-weight:700;',
+        'cursor:pointer;text-decoration:none;font-family:inherit;letter-spacing:.01em;'
+      ].join(''));
+      a.addEventListener('click', function(){ try { track('whatsapp'); } catch (e) {} });
+      bd.appendChild(a);
+    } catch (e) {}
+  }
+
+  function _addChatBtn(rt, inlineHost) {
+    var btn = document.createElement('button');
+    btn.textContent = '🤖 AI Concierge';
+    btn.setAttribute('style', [
+      'display:block;width:100%;padding:11px 0;margin-top:8px;',
+      'background:transparent;border:1.5px solid rgba(10,143,91,.35);border-radius:12px;',
+      'color:#0a8f5b;font-size:13px;font-weight:600;cursor:pointer;',
+      'transition:background .18s,border-color .18s;font-family:inherit;letter-spacing:.01em;'
+    ].join(''));
+    btn.addEventListener('mouseover', function(){ this.style.background='rgba(10,143,91,.07)'; this.style.borderColor='rgba(10,143,91,.7)'; });
+    btn.addEventListener('mouseout',  function(){ this.style.background='transparent'; this.style.borderColor='rgba(10,143,91,.35)'; });
+    btn.addEventListener('click', function() { _mountChat(rt, inlineHost); });
+    var bd = rt.querySelector('.bd');
+    if (bd) bd.appendChild(btn);
+  }
+
+  function _mountChat(rt, inlineHost) {
+    while (rt.firstChild) rt.removeChild(rt.firstChild);
+    inlineHost.style.cssText = 'display:none';
+
+    var chatBox = document.createElement('div');
+    chatBox.id = 'impt-chatbox';
+    chatBox.style.cssText = 'width:100%;max-width:420px;';
+    inlineHost.parentNode.insertBefore(chatBox, inlineHost.nextSibling);
+
+    var chatWrap = document.createElement('div');
+    chatWrap.style.cssText = 'height:520px;';
+    chatBox.appendChild(chatWrap);
+
+    function backFn() {
+      chatBox.parentNode.removeChild(chatBox);
+      inlineHost.style.cssText = '';
+      rt.innerHTML = panelHTML(false);
+      wire(rt, false, null);
+      loadBrand(rt);
+      loadSurf(rt);
+      _addChatBtn(rt, inlineHost);
+    }
+
+
+    function injectBackArrow() {
+      // Replace the pulsing dot with a ← back button
+      var dot = chatWrap.querySelector('.animate-pulse');
+      if (!dot) return;
+      var arrow = document.createElement('button');
+      arrow.innerHTML = '&#8592;';
+      arrow.title = 'Back to search';
+      arrow.style.cssText = 'background:rgba(255,255,255,.22);border:none;color:#fff;font-size:15px;font-weight:700;' +
+        'cursor:pointer;width:26px;height:26px;border-radius:50%;display:flex;align-items:center;' +
+        'justify-content:center;flex-shrink:0;transition:background .15s;padding:0;';
+      arrow.addEventListener('mouseover', function(){ this.style.background='rgba(255,255,255,.38)'; });
+      arrow.addEventListener('mouseout',  function(){ this.style.background='rgba(255,255,255,.22)'; });
+      arrow.addEventListener('click', backFn);
+      dot.parentNode.replaceChild(arrow, dot);
+    }
+
+    function doMount() {
+      window.IMPTChat.mount({ root: chatWrap, variant: 'embedded', partnerKey: KEY,
+        greetingText: window.__imptGreeting || '', chatPlaceholder: window.__imptPlaceholder || '',
+        hidePoweredBy: !!window.__imptHidePowered, primaryColor: window.__imptPrimaryColor || '' });
+      setTimeout(injectBackArrow, 300);
+    }
+
+    function loadChatJs(cb) {
+      if (window.IMPTChat) { cb(); return; }
+      var cs = document.createElement('script');
+      cs.src = 'https://swarm.impt.io/assets/chat.js?v=20260626b';
+      cs.onload = function() { if (window.IMPTChat) cb(); };
+      document.head.appendChild(cs);
+    }
+
+    function ensureTailwind(cb) {
+      if (window.tailwind) { cb(); return; }
+      if (document.querySelector('script[src*="cdn.tailwindcss.com"]')) { cb(); return; }
+      var tw = document.createElement('script');
+      tw.src = 'https://cdn.tailwindcss.com?plugins=typography,line-clamp';
+      tw.onload = function() {
+        if (window.tailwind && window.tailwind.config) {
+          window.tailwind.config = {
+            theme: { extend: { colors: {
+              'impt-green': '#0a8f5b', 'impt-dark': '#1C3829',
+              'impt-cream': '#F4F1EA', 'impt-accent': '#E8A838',
+            }}}
+          };
+        }
+        cb();
+      };
+      document.head.appendChild(tw);
+    }
+
+    ensureTailwind(function() { loadChatJs(doMount); });
+  }
+
+  function _addChatBtnFloat(rt, wrap, host) {
+    var btn = document.createElement('button');
+    btn.textContent = '🤖 AI Concierge';
+    btn.setAttribute('style', [
+      'display:block;width:100%;padding:11px 0;margin-top:8px;',
+      'background:transparent;border:1.5px solid rgba(10,143,91,.35);border-radius:12px;',
+      'color:#0a8f5b;font-size:13px;font-weight:600;cursor:pointer;',
+      'transition:background .18s,border-color .18s;font-family:inherit;letter-spacing:.01em;'
+    ].join(''));
+    btn.addEventListener('mouseover', function(){ this.style.background='rgba(10,143,91,.07)'; this.style.borderColor='rgba(10,143,91,.7)'; });
+    btn.addEventListener('mouseout',  function(){ this.style.background='transparent'; this.style.borderColor='rgba(10,143,91,.35)'; });
+    btn.addEventListener('click', function() { _mountChatFloat(rt, wrap, host); });
+    var bd = rt.querySelector('.bd'); if (bd) bd.appendChild(btn);
+  }
+
+  function _mountChatFloat(rt, wrap, host) {
+    while (rt.firstChild) rt.removeChild(rt.firstChild);
+    var chatBox = document.createElement('div'); chatBox.id = 'impt-chatbox';
+    chatBox.style.cssText = 'position:fixed;bottom:20px;right:20px;width:420px;max-width:calc(100vw - 24px);z-index:2147483647;';
+    document.body.appendChild(chatBox);
+    var chatWrap = document.createElement('div'); chatWrap.style.cssText = 'height:520px;';
+    chatBox.appendChild(chatWrap);
+
+    function backFn() {
+      document.body.removeChild(chatBox);
+      var nw = document.createElement('div'); nw.className = 'fl';
+      nw.innerHTML = panelHTML(true); rt.appendChild(nw);
+      wire(rt, true, nw); loadBrand(rt); loadSurf(rt);
+      _addChatBtnFloat(rt, nw, host); nw.classList.add('open');
+    }
+
+    function injectBackArrow() {
+      var dot = chatWrap.querySelector('.animate-pulse'); if (!dot) return;
+      var arrow = document.createElement('button');
+      arrow.innerHTML = '&#8592;'; arrow.title = 'Back to search';
+      arrow.style.cssText = 'background:rgba(255,255,255,.22);border:none;color:#fff;font-size:15px;font-weight:700;' +
+        'cursor:pointer;width:26px;height:26px;border-radius:50%;display:flex;align-items:center;' +
+        'justify-content:center;flex-shrink:0;transition:background .15s;padding:0;';
+      arrow.addEventListener('mouseover', function(){ this.style.background='rgba(255,255,255,.38)'; });
+      arrow.addEventListener('mouseout',  function(){ this.style.background='rgba(255,255,255,.22)'; });
+      arrow.addEventListener('click', backFn);
+      dot.parentNode.replaceChild(arrow, dot);
+    }
+    function doMount() {
+      window.IMPTChat.mount({ root: chatWrap, variant: 'embedded', partnerKey: KEY,
+        greetingText: window.__imptGreeting || '', chatPlaceholder: window.__imptPlaceholder || '',
+        hidePoweredBy: !!window.__imptHidePowered, primaryColor: window.__imptPrimaryColor || '' });
+      setTimeout(injectBackArrow, 300);
+    }
+    function loadChatJs(cb) {
+      if (window.IMPTChat) { cb(); return; }
+      var cs = document.createElement('script');
+      cs.src = 'https://swarm.impt.io/assets/chat.js?v=20260626b';
+      cs.onload = function() { if (window.IMPTChat) cb(); };
+      document.head.appendChild(cs);
+    }
+    function ensureTailwind(cb) {
+      if (window.tailwind) { cb(); return; }
+      if (document.querySelector('script[src*="cdn.tailwindcss.com"]')) { cb(); return; }
+      var tw = document.createElement('script');
+      tw.src = 'https://cdn.tailwindcss.com?plugins=typography,line-clamp';
+      tw.onload = function() {
+        if (window.tailwind && window.tailwind.config) {
+          window.tailwind.config = { theme: { extend: { colors: {
+            'impt-green': '#0a8f5b', 'impt-dark': '#1C3829',
+            'impt-cream': '#F4F1EA', 'impt-accent': '#E8A838' } } } };
+        } cb();
+      }; document.head.appendChild(tw);
+    }
+    ensureTailwind(function() { loadChatJs(doMount); });
+  }
+
+  function _mountDropdown() {
     var inlineHost = document.getElementById('impt-swarm') || document.querySelector('[data-impt-swarm]');
     if (inlineHost) {
       var rt = inlineHost.attachShadow ? inlineHost.attachShadow({mode:'open'}) : inlineHost;
@@ -341,7 +419,18 @@
       wire(rt, false, null);
       loadBrand(rt);
       loadSurf(rt);
+      // Expose live-preview hook for dashboard customization page
+      window.__imptApplyBrand = function(b) { _applyBrand(rt, b); };
       track('view');
+      try {
+        fetch('https://swarm.impt.io/api/widget/fuel?key=' + encodeURIComponent(KEY))
+          .then(function(r) { return r.ok ? r.json() : null; })
+          .then(function(fuel) {
+            if (fuel && fuel.features && fuel.features.chat_enabled && fuel.balance > 0) {
+              _addChatBtn(rt, inlineHost);
+            }
+          }).catch(function(){});
+      } catch(e) {}
     } else {
       var host = document.createElement('div');
       document.body.appendChild(host);
@@ -352,6 +441,15 @@
       wire(rt2, true, wrap);
       loadBrand(rt2);
       loadSurf(rt2);
+      try {
+        fetch('https://swarm.impt.io/api/widget/fuel?key=' + encodeURIComponent(KEY))
+          .then(function(r) { return r.ok ? r.json() : null; })
+          .then(function(fuel) {
+            if (fuel && fuel.features && fuel.features.chat_enabled && fuel.balance > 0) {
+              _addChatBtnFloat(rt2, wrap, host);
+            }
+          }).catch(function(){});
+      } catch(e) {}
       function flip(left){ wrap.classList.toggle('left', left); try{ host.setAttribute('data-impt-side', left?'left':'right'); }catch(_){ } }
       function place(){
         try{
@@ -376,5 +474,21 @@
       track('load');
     }
   }
+
+  // Always-on WhatsApp bubble on EVERY page the widget loads (Mike 2026-06-28: WhatsApp owns the whole CTA).
+  // Independent of the booking card; bottom-LEFT so it never collides with the bottom-right launcher.
+  function _imptWaBubble() {
+    // Single source of truth: load the canonical help-bubble script (the inviting labelled pill).
+    try {
+      if (window.__imptWaBubble || document.getElementById('impt-wa-bubble') ||
+          document.querySelector('script[src*="wa-bubble.js"]')) return;
+      var s = document.createElement('script');
+      s.src = 'https://swarm.impt.io/wa-bubble.js'; s.async = true;
+      document.head.appendChild(s);
+    } catch (e) {}
+  }
+
+  function mount() { _mountDropdown(); _imptWaBubble(); }
+
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', mount); else mount();
 })();
